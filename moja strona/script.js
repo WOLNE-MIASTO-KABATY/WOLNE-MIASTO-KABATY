@@ -1,5 +1,5 @@
 /**
- * FlirtMatch — profile data & chat system
+ * OFland.pl — profile data & chat system
  * Edit profiles array to add/change cards. Replace #LINK_N with affiliate URLs.
  */
 
@@ -8,6 +8,9 @@ const TOKEN_STORAGE_KEY = 'flirtmatch_tokens';
 const SIDEBAR_COLLAPSED_KEY = 'flirtmatch_sidebar_collapsed';
 const USERS_STORAGE_KEY = 'flirtmatch_users';
 const CURRENT_USER_KEY = 'flirtmatch_current_user';
+const REFERRAL_STATS_KEY = 'flirtmatch_referral_stats';
+const PENDING_REF_KEY = 'flirtmatch_pending_ref';
+const REFERRAL_TIERS = [1, 5, 15, 50];
 const DEFAULT_TOKENS = 25;
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_\u00C0-\u024F]{3,24}$/;
@@ -24,41 +27,139 @@ const DISC_GRID_PHOTOS = [
   'images/discs/disc-3.png',
   'images/discs/disc-4.png',
   'images/discs/disc-5.png',
+  'images/discs/disc-6.png',
+  'images/discs/disc-7.png',
+  'images/discs/disc-8.png',
+  'images/discs/disc-9.png',
+  'images/discs/disc-10.png',
+  'images/discs/disc-11.png',
+  'images/discs/disc-12.png',
+  'images/discs/disc-13.png',
+  'images/discs/disc-14.png',
+  'images/discs/disc-15.png',
+  'images/discs/disc-16.png',
+  'images/discs/disc-17.png',
+  'images/discs/disc-18.png',
+  'images/discs/disc-19.png',
 ];
 
-/** Dyski w karuzeli hero — packId łączy z TOKEN_PACKAGES, image z DISC_GRID_PHOTOS */
+/** Kadrowanie miniatur — domyślnie center; tu twarze w centrum karty */
+const DISC_PHOTO_POSITIONS = {
+  'images/discs/disc-2.png': 'center 18%',
+  'images/discs/disc-5.png': '68% 22%',
+  'images/discs/disc-6.png': 'center 24%',
+  'images/discs/disc-7.png': 'center 20%',
+  'images/discs/disc-8.png': 'center 22%',
+  'images/discs/disc-9.png': 'center 20%',
+  'images/discs/disc-10.png': '72% 22%',
+  'images/discs/disc-11.png': 'center 20%',
+  'images/discs/disc-12.png': 'center 18%',
+  'images/discs/disc-13.png': '32% 22%',
+  'images/discs/disc-14.png': 'center 20%',
+  'images/discs/disc-15.png': 'center 22%',
+  'images/discs/disc-16.png': 'center 22%',
+  'images/discs/disc-17.png': 'center 26%',
+  'images/discs/disc-18.png': 'center 30%',
+  'images/discs/disc-19.png': 'center 38%',
+};
+
+function buildDiscPhotoHtml(item) {
+  if (!item?.image) return '<span class="disc-card__disc" aria-hidden="true"></span>';
+  const pos = DISC_PHOTO_POSITIONS[item.image];
+  const styleAttr = pos ? ` style="object-position: ${pos}"` : '';
+  return `<span class="disc-card__photo-wrap"><img src="${item.image}" alt="" class="disc-card__photo" loading="lazy"${styleAttr}></span>`;
+}
+
+/** Dyski w karuzeli hero — gridIndex łączy ze zdjęciem i stanem odblokowania siatki */
 const DISC_CAROUSEL_ITEMS = [
-  { packId: 'pack-50', discName: 'Dysk Starter', tag: 'Start' },
-  { packId: 'pack-120', discName: 'Dysk Gold', tag: 'Gold', popular: true },
-  { packId: 'pack-300', discName: 'Dysk VIP', tag: 'VIP' },
-  { packId: 'pack-50', discName: 'Dysk Classic', tag: 'Classic' },
-  { packId: 'pack-120', discName: 'Dysk Premium', tag: 'Pro', popular: true },
-  { packId: 'pack-300', discName: 'Dysk Max', tag: 'Max' },
-].map((item, i) => ({
+  { packId: 'pack-50', discName: 'Dysk Fagata', tag: 'Fagata', popular: true, gridIndex: 0 },
+  { packId: 'pack-120', discName: 'Dysk Natsu', tag: 'Natsu', gridIndex: 1 },
+  { packId: 'pack-300', discName: 'Dysk Vanessaszwaczka', tag: 'Vanessaszwaczka', gridIndex: 2 },
+  { packId: 'pack-50', discName: 'Dysk BadGirlSandra', tag: 'BadGirlSandra', gridIndex: 3 },
+  { packId: 'pack-120', discName: 'Dysk Julka Guzik', tag: 'Julka', popular: true, gridIndex: 4 },
+  { packId: 'pack-300', discName: 'Dysk HannahOwO', tag: 'HannahOwO', gridIndex: 17 },
+  { packId: 'pack-50', discName: 'Dysk Songheli', tag: 'Songheli', gridIndex: 10 },
+].map((item) => ({
   ...item,
-  image: DISC_GRID_PHOTOS[i % DISC_GRID_PHOTOS.length],
-  discId: `disc-carousel-${i}`,
+  image: DISC_GRID_PHOTOS[item.gridIndex],
+  discId: `disc-grid-${item.gridIndex}`,
 }));
 
 const DISC_GRID_NAMES = [
-  'Starter', 'Classic', 'Gold', 'VIP', 'Premium', 'Max', 'Pro', 'Elite', 'Plus', 'Nova',
-  'Ultra', 'Mega', 'Prime', 'Boost', 'Flash', 'Pulse', 'Wave', 'Spark', 'Rush', 'Flow',
-  'Edge', 'Core', 'Peak', 'Zone', 'Link', 'Sync', 'Bolt', 'Glow', 'Mint', 'Ruby',
+  'Fagata', 'Natsu', 'Vanessaszwaczka', 'BadGirlSandra', 'Julka Guzik',
+  'Hotjulcia', 'Amxnduh', 'Llleasy', 'Ultrafioletova', 'Sheeya',
+  'Songheli', 'Tanamongeau', 'Klaudusiek', 'Jaworowa', 'Amouranth',
+  'Sophieraiin', 'Mia_tattoo', 'HannahOwO', 'BelleDelphine',
 ];
 
 const DISC_UNLOCK_COST = 20;
+const UNLOCKED_DISCS_KEY = 'flirtmatch_unlocked_discs';
+
+/** Link do dysku — podmień na swój URL lub zostaw placeholder */
+const DISC_LINK_BASE = '#DISC_LINK_HERE';
+
+/** Link do reklamy (odblokowanie dysku) — podmień na swój URL */
+const DISC_AD_LINK = '#DISC_AD_LINK_HERE';
 
 let pendingDiscPurchase = null;
 
+function getUnlockedDiscIds() {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_DISCS_KEY);
+    const ids = raw ? JSON.parse(raw) : [];
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+function isDiscUnlocked(discId) {
+  if (!discId) return false;
+  return getUnlockedDiscIds().includes(discId);
+}
+
+function markDiscUnlocked(discId) {
+  if (!discId) return;
+  const ids = getUnlockedDiscIds();
+  if (ids.includes(discId)) return;
+  ids.push(discId);
+  localStorage.setItem(UNLOCKED_DISCS_KEY, JSON.stringify(ids));
+  refreshDiscClaimButton(discId);
+}
+
+function refreshDiscClaimButton(discId) {
+  document.querySelectorAll(`.disc-card[data-disc-id="${discId}"] .disc-card__claim`).forEach((btn) => {
+    btn.textContent = 'Odbierz swój dysk';
+  });
+}
+
+function getDiscLink(item) {
+  if (!item) return '';
+  if (item.link && /^https?:\/\//i.test(item.link)) return item.link;
+
+  const base = DISC_LINK_BASE;
+  if (!base || base === '#DISC_LINK_HERE' || !/^https?:\/\//i.test(base)) return '';
+
+  const trimmed = base.replace(/\/$/, '');
+  const ref = encodeURIComponent(item.discId || 'dysk');
+  return `${trimmed}/${ref}`;
+}
+
+function getDiscAdLink() {
+  const base = DISC_AD_LINK;
+  if (!base || base === '#DISC_AD_LINK_HERE' || !/^https?:\/\//i.test(base)) return '';
+  return base;
+}
+
 function getDiscGridItems() {
   const packIds = TOKEN_PACKAGES.map((p) => p.id);
-  return DISC_GRID_NAMES.map((name, i) => ({
+  return DISC_GRID_PHOTOS.map((photo, i) => ({
     discId: `disc-grid-${i}`,
     packId: packIds[i % packIds.length],
-    discName: `Dysk ${name}`,
+    discName: `Dysk ${DISC_GRID_NAMES[i] || i + 1}`,
     popular: i % 6 === 0,
     tag: String(i + 1),
-    image: DISC_GRID_PHOTOS[i] || null,
+    image: photo,
   }));
 }
 
@@ -162,6 +263,57 @@ function getInviteReferralLink() {
   const trimmed = base.replace(/\/$/, '');
   const joiner = trimmed.includes('?') ? '&' : '?';
   return `${trimmed}${joiner}ref=${ref}`;
+}
+
+function captureReferralFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('ref');
+  if (ref) {
+    sessionStorage.setItem(PENDING_REF_KEY, ref.trim().toLowerCase());
+  }
+}
+
+function getReferralStats() {
+  try {
+    return JSON.parse(localStorage.getItem(REFERRAL_STATS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function getReferralSignupCount(username) {
+  if (!username) return 0;
+  const key = username.toLowerCase();
+  const statsCount = getReferralStats()[key] || 0;
+  const usersCount = getStoredUsers().filter(
+    (u) => u.referredBy?.toLowerCase() === key
+  ).length;
+  return Math.max(statsCount, usersCount);
+}
+
+function incrementReferralSignup(referrerUsername) {
+  const key = referrerUsername.toLowerCase();
+  const stats = getReferralStats();
+  stats[key] = (stats[key] || 0) + 1;
+  localStorage.setItem(REFERRAL_STATS_KEY, JSON.stringify(stats));
+}
+
+function attributeReferralOnRegister(newUser) {
+  const pendingRef = sessionStorage.getItem(PENDING_REF_KEY);
+  if (!pendingRef) return;
+
+  sessionStorage.removeItem(PENDING_REF_KEY);
+
+  const referrer = pendingRef.toLowerCase();
+  if (referrer === newUser.username.toLowerCase()) return;
+
+  const referrerExists = getStoredUsers().some(
+    (u) => u.username.toLowerCase() === referrer
+  );
+  if (!referrerExists) return;
+
+  newUser.referredBy = referrer;
+  incrementReferralSignup(referrer);
 }
 
 function showInviteLinkPanel() {
@@ -405,6 +557,10 @@ function updateTokenUI(balance) {
   });
 }
 
+function syncTokenDisplay() {
+  updateTokenUI(getTokenBalance());
+}
+
 function showToast(message) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -432,9 +588,7 @@ function buildDiscCardHtml(item, extraClass = '') {
 
   const total = pack.tokens + (pack.bonusTokens || 0);
   const popularClass = item.popular || pack.popular ? ' disc-card--popular' : '';
-  const visual = item.image
-    ? `<span class="disc-card__photo-wrap"><img src="${item.image}" alt="" class="disc-card__photo" loading="lazy"></span>`
-    : '<span class="disc-card__disc" aria-hidden="true"></span>';
+  const visual = buildDiscPhotoHtml(item);
 
   return `
     <button type="button" class="disc-card${popularClass}${extraClass}${item.image ? ' disc-card--photo' : ''}" data-pack-id="${pack.id}" aria-label="Kup ${item.discName}: ${total} żetonów za ${pack.price}">
@@ -452,16 +606,14 @@ function buildDiscCardHtml(item, extraClass = '') {
 function buildDiscClaimCardHtml(item, variant = 'grid') {
   const variantClass = variant === 'carousel' ? ' disc-card--carousel' : ' disc-card--grid';
   const popularClass = item.popular ? ' disc-card--popular' : '';
-  const visual = item.image
-    ? `<span class="disc-card__photo-wrap"><img src="${item.image}" alt="" class="disc-card__photo" loading="lazy"></span>`
-    : '<span class="disc-card__disc" aria-hidden="true"></span>';
+  const visual = buildDiscPhotoHtml(item);
 
   return `
     <article class="disc-card${variantClass}${popularClass}${item.image ? ' disc-card--photo' : ''}" data-disc-id="${item.discId}">
       ${item.popular ? '<span class="disc-card__badge">Hit</span>' : ''}
       ${visual}
       <span class="disc-card__name">${item.discName}</span>
-      <button type="button" class="disc-card__claim">Odbierz</button>
+      <button type="button" class="disc-card__claim">${isDiscUnlocked(item.discId) ? 'Odbierz swój dysk' : 'Odbierz'}</button>
     </article>
   `;
 }
@@ -487,17 +639,88 @@ function bindDiscClaimButtons(container) {
   });
 }
 
+function resetDiscPurchaseModal() {
+  const payStep = document.getElementById('disc-purchase-step-pay');
+  const claimStep = document.getElementById('disc-purchase-step-claim');
+  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
+
+  if (payStep) payStep.hidden = false;
+  if (claimStep) claimStep.hidden = true;
+  if (subtitle) subtitle.textContent = 'Odblokuj zawartość dysku za żetony';
+}
+
+function showDiscClaimStep(item) {
+  const payStep = document.getElementById('disc-purchase-step-pay');
+  const claimStep = document.getElementById('disc-purchase-step-claim');
+  const linkInput = document.getElementById('disc-purchase-link');
+  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
+  const discLink = getDiscLink(item);
+
+  if (payStep) payStep.hidden = true;
+  if (claimStep) claimStep.hidden = false;
+  if (subtitle) subtitle.textContent = 'Twój dysk jest gotowy do odebrania';
+  if (linkInput) {
+    linkInput.value = discLink || '';
+    linkInput.placeholder = discLink ? '' : 'Link zostanie uzupełniony';
+  }
+}
+
+async function copyDiscLink() {
+  const input = document.getElementById('disc-purchase-link');
+  const link = input?.value || getDiscLink(pendingDiscPurchase);
+  if (!link) {
+    showToast('Link do dysku nie jest jeszcze skonfigurowany.');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(link);
+    showToast('Link skopiowany do schowka.');
+  } catch {
+    input?.select();
+    showToast('Zaznaczono link — skopiuj ręcznie (Ctrl+C).');
+  }
+}
+
+function claimDisc() {
+  const item = pendingDiscPurchase;
+  const link = getDiscLink(item);
+  if (!link) {
+    showToast('Link do dysku nie jest jeszcze skonfigurowany.');
+    return;
+  }
+  const name = item?.discName || 'dysk';
+  window.open(link, '_blank', 'noopener,noreferrer');
+  closeDiscPurchase();
+  showToast(`Otwarto ${name}.`);
+}
+
+function unlockDiscViaAd() {
+  if (!pendingDiscPurchase) return;
+
+  const adLink = getDiscAdLink();
+  if (adLink) {
+    window.open(adLink, '_blank', 'noopener,noreferrer');
+    showToast('Otwarto reklamę — po obejrzeniu odbierz dysk poniżej.');
+  } else {
+    showToast('Link do reklamy zostanie uzupełniony wkrótce.');
+  }
+
+  markDiscUnlocked(pendingDiscPurchase.discId);
+  showDiscClaimStep(pendingDiscPurchase);
+}
+
 function openDiscPurchase(item) {
   const modal = document.getElementById('disc-purchase-modal');
   if (!modal) return;
 
   pendingDiscPurchase = item;
+
   const title = document.getElementById('disc-purchase-title');
   const preview = document.getElementById('disc-purchase-preview');
   const balanceEl = document.getElementById('disc-purchase-balance');
+  const alreadyUnlocked = isDiscUnlocked(item.discId);
 
   if (title) title.textContent = item.discName;
-  if (balanceEl) balanceEl.textContent = String(getTokenBalance());
 
   if (preview) {
     preview.innerHTML = item.image
@@ -505,7 +728,13 @@ function openDiscPurchase(item) {
       : '<span class="disc-purchase__disc" aria-hidden="true"></span>';
   }
 
-  updateTokenUI(getTokenBalance());
+  if (alreadyUnlocked) {
+    showDiscClaimStep(item);
+  } else {
+    resetDiscPurchaseModal();
+    if (balanceEl) balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
+  }
+
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
@@ -519,6 +748,7 @@ function closeDiscPurchase() {
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
   pendingDiscPurchase = null;
+  resetDiscPurchaseModal();
 }
 
 function confirmDiscPurchase() {
@@ -536,9 +766,9 @@ function confirmDiscPurchase() {
   updateTokenUI(newBalance);
   updateInboxPricingBalance();
   renderInboxPricingShop();
-  const name = pendingDiscPurchase.discName;
-  closeDiscPurchase();
-  showToast(`Odebrano ${name}! Odblokowano za ${DISC_UNLOCK_COST} żetonów. Stan: ${newBalance}`);
+  markDiscUnlocked(pendingDiscPurchase.discId);
+  showDiscClaimStep(pendingDiscPurchase);
+  showToast(`Odblokowano za ${DISC_UNLOCK_COST} żetonów. Stan: ${newBalance.toLocaleString('pl-PL')}`);
 }
 
 function initDiscPurchase() {
@@ -546,10 +776,15 @@ function initDiscPurchase() {
   const modalBackdrop = document.getElementById('disc-purchase-backdrop');
   const confirmBtn = document.getElementById('disc-purchase-confirm');
   const tokensBtn = document.getElementById('disc-purchase-tokens');
+  const claimBtn = document.getElementById('disc-purchase-claim');
+  const linkCopyBtn = document.getElementById('disc-purchase-link-copy');
 
   modalClose?.addEventListener('click', closeDiscPurchase);
   modalBackdrop?.addEventListener('click', closeDiscPurchase);
   confirmBtn?.addEventListener('click', confirmDiscPurchase);
+  document.getElementById('disc-purchase-ad')?.addEventListener('click', unlockDiscViaAd);
+  claimBtn?.addEventListener('click', claimDisc);
+  linkCopyBtn?.addEventListener('click', copyDiscLink);
   tokensBtn?.addEventListener('click', () => {
     closeDiscPurchase();
     openTokenShop();
@@ -899,19 +1134,6 @@ function initProfileMenu() {
     closeProfileMenu();
   });
 
-  document.getElementById('profile-menu-settings')?.addEventListener('click', () => {
-    closeProfileMenu();
-    showToast('Ustawienia konta — funkcja w przygotowaniu.');
-  });
-
-  document.getElementById('profile-menu-edit')?.addEventListener('click', () => {
-    closeProfileMenu();
-    if (getCurrentUser()) {
-      document.getElementById('invite-friend')?.click();
-    } else {
-      openAuthModal('register');
-    }
-  });
 
   document.getElementById('profile-menu-logout')?.addEventListener('click', () => {
     closeProfileMenu();
@@ -964,6 +1186,7 @@ function initWallet() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDiscPurchase();
+      closeEditModal();
       closeAuthModal();
       closeTokenShop();
       closeProfileMenu();
@@ -1108,9 +1331,7 @@ function updateRegisterUI() {
     setAuthPanelMode(document.getElementById('auth-modal')?.dataset.authMode || 'register');
   }
 
-  if (document.getElementById('account-page')) {
-    initAccountPage();
-  }
+  refreshAccountPageData();
 }
 
 function escapeHtml(str) {
@@ -1221,6 +1442,8 @@ function handleRegisterSubmit(e) {
     password,
     createdAt: new Date().toISOString(),
   };
+
+  attributeReferralOnRegister(newUser);
 
   users.push(newUser);
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
@@ -1350,7 +1573,7 @@ function initNavbar() {
     });
   });
 
-  const sectionIds = ['hero', 'profiles', 'discs', 'about', 'contact'];
+  const sectionIds = ['hero', 'profiles', 'discs', 'gry', 'komiksy', 'about', 'contact'];
   const onScroll = () => {
     if (document.getElementById('inbox')?.classList.contains('is-open')) return;
     let current = 'hero';
@@ -1489,7 +1712,7 @@ function closeInbox() {
   activeInboxId = null;
 
   let current = 'hero';
-  ['hero', 'profiles', 'discs', 'about', 'contact'].forEach((id) => {
+  ['hero', 'profiles', 'discs', 'gry', 'komiksy', 'about', 'contact'].forEach((id) => {
     const el = document.getElementById(id);
     if (el && el.getBoundingClientRect().top <= 120) current = id;
   });
@@ -1696,6 +1919,7 @@ function initScrollAnimations() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  captureReferralFromUrl();
   shuffleProfiles();
   renderProfiles();
   renderDiscCarousel();
@@ -1711,15 +1935,300 @@ document.addEventListener('DOMContentLoaded', () => {
   initProfileMenu();
   initDiscPurchase();
   initAccountPage();
+  initAccountSettingsPage();
+  initReferralPage();
   initScrollAnimations();
 });
 
-function initAccountPage() {
+let editModalField = null;
+let settingsEmailRevealed = false;
+
+function maskEmail(email) {
+  if (!email || !email.includes('@')) return '—';
+  const [local, domain] = email.split('@');
+  const show = Math.min(3, local.length);
+  const stars = '*'.repeat(Math.max(5, local.length - show));
+  return `${local.slice(0, show)}${stars}@${domain}`;
+}
+
+function getUserRecord() {
+  const current = getCurrentUser();
+  if (!current) return null;
+  return getStoredUsers().find((u) => u.username.toLowerCase() === current.username.toLowerCase()) || null;
+}
+
+function saveUsersArray(users) {
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+}
+
+function syncCurrentUserFromRecord(record) {
+  if (!record) return;
+  setCurrentUser({ username: record.username, email: record.email });
+}
+
+function refreshAccountSettingsView() {
+  const user = getUserRecord();
+  const usernameEl = document.getElementById('settings-username');
+  const emailDisplay = document.getElementById('settings-email-display');
+  const emailToggle = document.getElementById('settings-email-toggle');
+
+  if (!usernameEl || !emailDisplay) return;
+
+  if (!user) {
+    usernameEl.textContent = '—';
+    emailDisplay.textContent = '—';
+    if (emailToggle) emailToggle.hidden = true;
+    return;
+  }
+
+  usernameEl.textContent = user.username;
+  if (settingsEmailRevealed) {
+    emailDisplay.textContent = user.email;
+    if (emailToggle) {
+      emailToggle.textContent = 'Ukryj';
+      emailToggle.hidden = false;
+    }
+  } else {
+    emailDisplay.textContent = maskEmail(user.email);
+    if (emailToggle) {
+      emailToggle.textContent = 'Pokaż';
+      emailToggle.hidden = false;
+    }
+  }
+
+  updateRegisterUI();
+}
+
+function showEditFormError(message) {
+  const el = document.getElementById('edit-form-error');
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+    el.textContent = '';
+  }
+}
+
+function buildEditFormFields(field) {
+  const user = getUserRecord();
+  const wrap = document.getElementById('edit-form-fields');
+  if (!wrap || !user) return;
+
+  if (field === 'username') {
+    wrap.innerHTML = `
+      <label class="register-form__label" for="edit-username">Nowa nazwa użytkownika</label>
+      <input class="register-form__input" type="text" id="edit-username" value="${escapeHtml(user.username)}" minlength="3" maxlength="24" required>
+    `;
+    return;
+  }
+
+  if (field === 'email') {
+    wrap.innerHTML = `
+      <label class="register-form__label" for="edit-email">Nowy adres e-mail</label>
+      <input class="register-form__input" type="email" id="edit-email" value="${escapeHtml(user.email)}" required>
+    `;
+    return;
+  }
+
+  if (field === 'password') {
+    wrap.innerHTML = `
+      <label class="register-form__label" for="edit-password-current">Aktualne hasło</label>
+      <input class="register-form__input" type="password" id="edit-password-current" autocomplete="current-password" required>
+      <label class="register-form__label" for="edit-password-new">Nowe hasło</label>
+      <input class="register-form__input" type="password" id="edit-password-new" minlength="6" autocomplete="new-password" required>
+      <label class="register-form__label" for="edit-password-confirm">Powtórz nowe hasło</label>
+      <input class="register-form__input" type="password" id="edit-password-confirm" minlength="6" autocomplete="new-password" required>
+    `;
+  }
+}
+
+function openEditModal(field) {
+  if (!getCurrentUser()) {
+    openAuthModal('login');
+    return;
+  }
+
+  const modal = document.getElementById('edit-modal');
+  const title = document.getElementById('edit-modal-title');
+  const subtitle = document.getElementById('edit-modal-subtitle');
+  if (!modal) return;
+
+  editModalField = field;
+  showEditFormError('');
+
+  const titles = {
+    username: 'Zmień nazwę użytkownika',
+    email: 'Zmień adres e-mail',
+    password: 'Zmień hasło',
+  };
+  const subs = {
+    username: 'Wpisz nową nazwę użytkownika (3–24 znaki).',
+    email: 'Wpisz nowy adres e-mail powiązany z kontem.',
+    password: 'Podaj aktualne hasło i ustaw nowe (min. 6 znaków).',
+  };
+
+  if (title) title.textContent = titles[field] || 'Edytuj';
+  if (subtitle) subtitle.textContent = subs[field] || '';
+  buildEditFormFields(field);
+
+  closeWalletDropdown();
+  closeProfileMenu();
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  const firstInput = document.querySelector('#edit-form-fields .register-form__input');
+  firstInput?.focus();
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-modal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  editModalField = null;
+  if (
+    !document.getElementById('token-modal')?.classList.contains('is-open') &&
+    !document.getElementById('auth-modal')?.classList.contains('is-open')
+  ) {
+    document.body.style.overflow = '';
+  }
+}
+
+function handleEditSubmit(e) {
+  e.preventDefault();
+  showEditFormError('');
+
+  const user = getUserRecord();
+  if (!user || !editModalField) return;
+
+  const users = getStoredUsers();
+  const idx = users.findIndex((u) => u.username.toLowerCase() === user.username.toLowerCase());
+  if (idx === -1) return;
+
+  if (editModalField === 'username') {
+    const username = document.getElementById('edit-username')?.value.trim();
+    if (!username || !USERNAME_REGEX.test(username)) {
+      showEditFormError('Login: 3–24 znaki (litery, cyfry, podkreślnik).');
+      return;
+    }
+    if (users.some((u, i) => i !== idx && u.username.toLowerCase() === username.toLowerCase())) {
+      showEditFormError('Ten login jest już zajęty.');
+      return;
+    }
+    users[idx].username = username;
+    saveUsersArray(users);
+    syncCurrentUserFromRecord(users[idx]);
+    refreshAccountSettingsView();
+    showToast('Nazwa użytkownika została zmieniona.');
+  }
+
+  if (editModalField === 'email') {
+    const email = document.getElementById('edit-email')?.value.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showEditFormError('Podaj prawidłowy adres e-mail.');
+      return;
+    }
+    if (users.some((u, i) => i !== idx && u.email === email)) {
+      showEditFormError('Ten e-mail jest już zarejestrowany.');
+      return;
+    }
+    users[idx].email = email;
+    saveUsersArray(users);
+    syncCurrentUserFromRecord(users[idx]);
+    settingsEmailRevealed = false;
+    refreshAccountSettingsView();
+    showToast('Adres e-mail został zmieniony.');
+  }
+
+  if (editModalField === 'password') {
+    const current = document.getElementById('edit-password-current')?.value;
+    const next = document.getElementById('edit-password-new')?.value;
+    const confirm = document.getElementById('edit-password-confirm')?.value;
+    if (current !== users[idx].password) {
+      showEditFormError('Aktualne hasło jest nieprawidłowe.');
+      return;
+    }
+    if (!next || next.length < 6) {
+      showEditFormError('Nowe hasło musi mieć co najmniej 6 znaków.');
+      return;
+    }
+    if (next !== confirm) {
+      showEditFormError('Nowe hasła nie są identyczne.');
+      return;
+    }
+    users[idx].password = next;
+    saveUsersArray(users);
+    showToast('Hasło zostało zmienione.');
+  }
+
+  closeEditModal();
+}
+
+function initAccountSettingsPage() {
+  const page = document.getElementById('account-settings-page');
+  if (!page) return;
+
+  if (!getCurrentUser()) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  updateRegisterUI();
+  updateTokenUI(getTokenBalance());
+  refreshAccountSettingsView();
+
+  document.querySelectorAll('[data-edit]').forEach((btn) => {
+    btn.addEventListener('click', () => openEditModal(btn.dataset.edit));
+  });
+
+  document.getElementById('edit-modal-close')?.addEventListener('click', closeEditModal);
+  document.getElementById('edit-modal-backdrop')?.addEventListener('click', closeEditModal);
+  document.getElementById('edit-form')?.addEventListener('submit', handleEditSubmit);
+
+  document.getElementById('settings-email-toggle')?.addEventListener('click', () => {
+    settingsEmailRevealed = !settingsEmailRevealed;
+    refreshAccountSettingsView();
+  });
+
+  document.getElementById('settings-disable-account')?.addEventListener('click', () => {
+    showToast('Wyłączenie konta — funkcja demo (konto pozostaje aktywne).');
+  });
+
+  document.getElementById('settings-delete-account')?.addEventListener('click', () => {
+    if (!confirm('Na pewno chcesz trwale usunąć konto? Tej operacji nie można cofnąć.')) return;
+    const user = getUserRecord();
+    if (!user) return;
+    const users = getStoredUsers().filter(
+      (u) => u.username.toLowerCase() !== user.username.toLowerCase()
+    );
+    saveUsersArray(users);
+    setCurrentUser(null);
+    showToast('Konto zostało usunięte.');
+    window.location.href = 'index.html';
+  });
+}
+
+function setAccountTab(tabId) {
   const page = document.getElementById('account-page');
   if (!page) return;
 
-  updateTokenUI(getTokenBalance());
+  page.dataset.accountTab = tabId;
 
+  document.querySelectorAll('.account-dashboard__tab').forEach((btn) => {
+    const active = btn.dataset.accountTab === tabId;
+    btn.classList.toggle('is-active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+
+  document.querySelectorAll('.account-dashboard__panel').forEach((panel) => {
+    const show = panel.id === `account-tab-${tabId}`;
+    panel.hidden = !show;
+  });
+}
+
+function refreshAccountPageData() {
   const user = getCurrentUser();
   const set = (id, text) => {
     const el = document.getElementById(id);
@@ -1729,7 +2238,86 @@ function initAccountPage() {
   set('account-username', user ? user.username : 'Gość');
   set('account-email', user ? user.email : '—');
   set('account-tokens', getTokenBalance().toLocaleString('pl-PL'));
+  syncTokenDisplay();
+}
+
+function refreshReferralPageData() {
+  const user = getCurrentUser();
+  const countEl = document.getElementById('referral-signup-count');
+  const referralInput = document.getElementById('account-referral-input');
+  const signupCount = user ? getReferralSignupCount(user.username) : 0;
+
+  if (countEl) {
+    countEl.textContent = signupCount.toLocaleString('pl-PL');
+  }
+
+  if (referralInput) {
+    referralInput.value = user ? getInviteReferralLink() : '—';
+  }
+
+  document.querySelectorAll('.referral-tier').forEach((tierEl) => {
+    const tier = Number(tierEl.dataset.tier);
+    tierEl.classList.toggle('referral-tier--reached', signupCount >= tier);
+  });
+}
+
+async function copyAccountReferralLink() {
+  const input = document.getElementById('account-referral-input');
+  const link = input?.value || getInviteReferralLink();
+  if (!getCurrentUser()) {
+    showToast('Zaloguj się, aby skopiować link polecający.');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(link);
+    showToast('Link skopiowany do schowka.');
+  } catch {
+    input?.select();
+    showToast('Zaznaczono link — skopiuj ręcznie (Ctrl+C).');
+  }
+}
+
+function initReferralPage() {
+  const page = document.getElementById('referral-page');
+  if (!page) return;
+
+  if (!getCurrentUser()) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  updateRegisterUI();
+  updateTokenUI(getTokenBalance());
+  refreshReferralPageData();
+
+  document.getElementById('account-referral-copy')?.addEventListener('click', copyAccountReferralLink);
+}
+
+function initAccountPage() {
+  const page = document.getElementById('account-page');
+  if (!page) return;
+
+  updateRegisterUI();
 
   const accountLink = document.getElementById('profile-menu-account');
   if (accountLink) accountLink.classList.add('is-active');
+
+  setAccountTab(page.dataset.accountTab || 'konto');
+
+  document.querySelectorAll('.account-dashboard__tab[data-account-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => setAccountTab(btn.dataset.accountTab || 'konto'));
+  });
+
+  const hash = window.location.hash.replace('#', '');
+  if (hash === 'settings') {
+    window.location.href = 'ustawienia.html';
+    return;
+  }
+  if (hash === 'referral') {
+    window.location.href = 'linki-referencyjne.html';
+    return;
+  }
+  if (hash === 'konto') {
+    setAccountTab('konto');
+  }
 }

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="FlirtMatch — Twoje konto">
-  <title>FlirtMatch — Konto</title>
+  <meta name="description" content="OFland.pl — Twoje konto">
+  <title>OFland.pl — Konto</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
           <span class="sidebar__logo-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-k)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-k" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
           </span>
-          <span class="sidebar__logo-text">FlirtMatch</span>
+          <span class="sidebar__logo-text">OFland.pl</span>
         </a>
       </div>
 
@@ -54,6 +54,14 @@
         <a href="index.html#discs" class="sidebar__link" title="Dyski">
           <span class="sidebar__link-icon sidebar__link-icon--discs" aria-hidden="true">◎</span>
           <span class="sidebar__link-text">Dyski</span>
+        </a>
+        <a href="index.html#gry" class="sidebar__link" title="Gry">
+          <span class="sidebar__link-icon sidebar__link-icon--games" aria-hidden="true">▣</span>
+          <span class="sidebar__link-text">Gry</span>
+        </a>
+        <a href="index.html#komiksy" class="sidebar__link" title="Komiksy">
+          <span class="sidebar__link-icon sidebar__link-icon--comics" aria-hidden="true">▤</span>
+          <span class="sidebar__link-text">Komiksy</span>
         </a>
         <a href="index.html" class="sidebar__link" id="open-inbox" title="Moje wiadomości">
           <span class="sidebar__link-icon sidebar__link-icon--inbox" aria-hidden="true">✉</span>
@@ -97,8 +105,8 @@
           </button>
         </div>
         <a href="index.html#hero" class="topbar__brand logo">
-          <span class="logo__mark">FM</span>
-          <span class="topbar__brand-text">FlirtMatch</span>
+          <span class="logo__mark">OF</span>
+          <span class="topbar__brand-text">OFland.pl</span>
         </a>
         <div class="topbar__actions">
           <button type="button" class="topbar__icon-btn" aria-label="Powiadomienia">
@@ -110,8 +118,7 @@
             </button>
             <div class="profile-menu__dropdown" id="profile-menu-dropdown" hidden>
               <a href="konto.html" class="profile-menu__item profile-menu__item--link is-active" id="profile-menu-account">Konto</a>
-              <button type="button" class="profile-menu__item" id="profile-menu-settings">Ustawienia</button>
-              <button type="button" class="profile-menu__item" id="profile-menu-edit">Edytuj</button>
+              <a href="ustawienia.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-settings">Ustawienia</a>
               <button type="button" class="profile-menu__item profile-menu__item--logout" id="profile-menu-logout">Wyloguj</button>
             </div>
           </div>
@@ -122,24 +129,33 @@
         <div class="page-center">
           <section class="account-page" id="account-page">
             <a href="index.html" class="account-page__back">← Wróć na stronę główną</a>
-            <div class="account-page__panel">
-              <h1 class="account-page__title">Twoje konto</h1>
-              <p class="account-page__subtitle">Podgląd danych zalogowanego użytkownika (demo).</p>
-              <dl class="account-page__list">
-                <div class="account-page__row">
-                  <dt class="account-page__label">Login</dt>
-                  <dd class="account-page__value" id="account-username">Gość</dd>
+            <div class="account-dashboard">
+              <nav class="account-dashboard__nav" role="tablist" aria-label="Panel konta">
+                <button type="button" class="account-dashboard__tab is-active" id="account-tab-btn-konto" role="tab" aria-selected="true" aria-controls="account-tab-konto" data-account-tab="konto">Konto</button>
+                <a href="ustawienia.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-settings">Ustawienia konta</a>
+                <a href="linki-referencyjne.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-referral">Linki referencyjne</a>
+              </nav>
+              <div class="account-dashboard__content">
+                <div class="account-dashboard__panel" id="account-tab-konto" role="tabpanel" aria-labelledby="account-tab-btn-konto">
+                  <h1 class="account-page__title">Twoje konto</h1>
+                  <p class="account-page__subtitle">Podgląd danych zalogowanego użytkownika (demo).</p>
+                  <dl class="account-page__list">
+                    <div class="account-page__row">
+                      <dt class="account-page__label">Login</dt>
+                      <dd class="account-page__value" id="account-username">Gość</dd>
+                    </div>
+                    <div class="account-page__row">
+                      <dt class="account-page__label">E-mail</dt>
+                      <dd class="account-page__value" id="account-email">—</dd>
+                    </div>
+                    <div class="account-page__row">
+                      <dt class="account-page__label">Żetony</dt>
+                      <dd class="account-page__value" id="account-tokens">0</dd>
+                    </div>
+                  </dl>
+                  <button type="button" class="btn btn--primary js-open-token-shop">Doładuj żetony</button>
                 </div>
-                <div class="account-page__row">
-                  <dt class="account-page__label">E-mail</dt>
-                  <dd class="account-page__value" id="account-email">—</dd>
-                </div>
-                <div class="account-page__row">
-                  <dt class="account-page__label">Żetony</dt>
-                  <dd class="account-page__value" id="account-tokens">0</dd>
-                </div>
-              </dl>
-              <button type="button" class="btn btn--primary js-open-token-shop">Doładuj żetony</button>
+              </div>
             </div>
           </section>
         </div>
