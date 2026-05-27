@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="mylead-verification" content="0394d6b9284b343833b53979169881c2">
-  <meta name="description" content="FlirtMatch — poznaj singli w Twojej okolicy. Rozpocznij rozmowę już dziś.">
-  <title>FlirtMatch — Ekskluzywne randki</title>
+  <meta name="description" content="OFland.pl — treści cyfrowe dla dorosłych, dyski, czat premium i materiały multimedialne.">
+  <title>OFland.pl — Platforma dla dorosłych</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -26,7 +25,7 @@
           <span class="sidebar__logo-icon" aria-hidden="true">
             <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
           </span>
-          <span class="sidebar__logo-text">FlirtMatch</span>
+          <span class="sidebar__logo-text">OFland.pl</span>
         </a>
       </div>
 
@@ -56,6 +55,14 @@
         <a href="#discs" class="sidebar__link" data-nav="discs" title="Dyski">
           <span class="sidebar__link-icon sidebar__link-icon--discs" aria-hidden="true">◎</span>
           <span class="sidebar__link-text">Dyski</span>
+        </a>
+        <a href="#gry" class="sidebar__link" data-nav="gry" title="Gry">
+          <span class="sidebar__link-icon sidebar__link-icon--games" aria-hidden="true">▣</span>
+          <span class="sidebar__link-text">Gry</span>
+        </a>
+        <a href="#komiksy" class="sidebar__link" data-nav="komiksy" title="Komiksy">
+          <span class="sidebar__link-icon sidebar__link-icon--comics" aria-hidden="true">▤</span>
+          <span class="sidebar__link-text">Komiksy</span>
         </a>
         <a href="#messages" class="sidebar__link nav__link--inbox" id="open-inbox" data-nav="messages" title="Moje wiadomości">
           <span class="sidebar__link-icon sidebar__link-icon--inbox" aria-hidden="true">✉</span>
@@ -99,8 +106,8 @@
           </button>
         </div>
         <a href="#hero" class="topbar__brand logo">
-          <span class="logo__mark">FM</span>
-          <span class="topbar__brand-text">FlirtMatch</span>
+          <span class="logo__mark">OF</span>
+          <span class="topbar__brand-text">OFland.pl</span>
         </a>
         <div class="topbar__actions">
           <button type="button" class="topbar__icon-btn" aria-label="Powiadomienia">
@@ -112,8 +119,7 @@
             </button>
             <div class="profile-menu__dropdown" id="profile-menu-dropdown" hidden>
               <a href="konto.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-account">Konto</a>
-              <button type="button" class="profile-menu__item" id="profile-menu-settings">Ustawienia</button>
-              <button type="button" class="profile-menu__item" id="profile-menu-edit">Edytuj</button>
+              <a href="ustawienia.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-settings">Ustawienia</a>
               <button type="button" class="profile-menu__item profile-menu__item--logout" id="profile-menu-logout">Wyloguj</button>
             </div>
           </div>
@@ -163,6 +169,35 @@
             <h2 class="section-title"><span class="section-title__line"></span>Dyski</h2>
             <p class="section-subtitle">Wybierz dysk żetonów — kliknij kartę, aby doładować konto</p>
             <div class="discs-grid" id="discs-grid"></div>
+            <p class="discs-catalog__soon">Nowe dyski już wkrótce</p>
+          </div>
+        </section>
+
+        <section class="content-hub section-block" id="gry">
+          <div class="section-block__inner">
+            <h2 class="section-title"><span class="section-title__line"></span>Gry</h2>
+            <p class="section-subtitle">Gry i rozrywka online — wkrótce więcej tytułów</p>
+            <div class="content-hub__grid">
+              <article class="content-hub__card">
+                <span class="content-hub__card-icon" aria-hidden="true">▣</span>
+                <h3 class="content-hub__card-title">Katalog gier</h3>
+                <p class="content-hub__card-desc">Nowe gry pojawią się tutaj wkrótce.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-hub section-block" id="komiksy">
+          <div class="section-block__inner">
+            <h2 class="section-title"><span class="section-title__line"></span>Komiksy</h2>
+            <p class="section-subtitle">Komiksy i serie — wkrótce nowe rozdziały</p>
+            <div class="content-hub__grid">
+              <article class="content-hub__card">
+                <span class="content-hub__card-icon" aria-hidden="true">▤</span>
+                <h3 class="content-hub__card-title">Katalog komiksów</h3>
+                <p class="content-hub__card-desc">Nowe komiksy pojawią się tutaj wkrótce.</p>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -239,20 +274,20 @@
 
         <section class="about section-block" id="about">
           <div class="section-block__inner about__inner">
-            <h2 class="section-title"><span class="section-title__line"></span>O FlirtMatch</h2>
-            <p>FlirtMatch to nowoczesna platforma randkowa, która łączy singli szukających prawdziwych rozmów i relacji. Bezpiecznie, szybko i za darmo — zacznij już dziś.</p>
+            <h2 class="section-title"><span class="section-title__line"></span>O OFland.pl</h2>
+            <p>OFland.pl to platforma cyfrowych treści dla dorosłych — dyski, czat premium i materiały multimedialne. Wyłącznie dla użytkowników pełnoletnich.</p>
           </div>
         </section>
 
         <footer class="footer section-block" id="contact">
           <div class="section-block__inner footer__inner">
             <nav class="footer__links">
-              <a href="#">Regulamin</a>
-              <a href="#">Polityka prywatności</a>
+              <a href="regulamin.html">Regulamin</a>
+              <a href="polityka-prywatnosci.html">Polityka prywatności</a>
               <a href="#contact">Kontakt</a>
             </nav>
             <p class="footer__disclaimer">Strona zawiera linki afiliacyjne.</p>
-            <p class="footer__copy">© 2026 FlirtMatch. Wszelkie prawa zastrzeżone.</p>
+            <p class="footer__copy">© 2026 OFland.pl. Wszelkie prawa zastrzeżone.</p>
           </div>
         </footer>
         </div>
@@ -335,11 +370,30 @@
       </header>
       <div class="disc-purchase__preview" id="disc-purchase-preview"></div>
       <p class="disc-purchase__name" id="disc-purchase-title">Dysk</p>
-      <p class="token-modal__balance disc-purchase__cost">Koszt odblokowania: <strong>20</strong> żetonów</p>
-      <p class="token-modal__balance">Twój stan: <strong id="disc-purchase-balance">0</strong> żetonów</p>
-      <button type="button" class="disc-purchase__confirm" id="disc-purchase-confirm">Odblokuj za 20 żetonów</button>
-      <button type="button" class="disc-purchase__tokens" id="disc-purchase-tokens">Doładuj żetony</button>
-      <p class="token-modal__note">Po potwierdzeniu żetony zostaną pobrane z portfela.</p>
+
+      <div id="disc-purchase-step-pay">
+        <p class="token-modal__balance disc-purchase__cost">Koszt odblokowania: <strong>20</strong> żetonów</p>
+        <p class="token-modal__balance">Twój stan: <strong id="disc-purchase-balance">0</strong> żetonów</p>
+        <div class="disc-purchase__actions">
+          <button type="button" class="disc-purchase__confirm" id="disc-purchase-confirm">Odblokuj za 20 żetonów</button>
+          <span class="disc-purchase__or" aria-hidden="true">lub</span>
+          <button type="button" class="disc-purchase__ad" id="disc-purchase-ad">Odblokuj poprzez obejrzenie reklamy</button>
+        </div>
+        <button type="button" class="disc-purchase__tokens" id="disc-purchase-tokens">Doładuj żetony</button>
+        <p class="token-modal__note">Po potwierdzeniu żetony zostaną pobrane z portfela.</p>
+      </div>
+
+      <div id="disc-purchase-step-claim" hidden>
+        <div class="disc-purchase__link-wrap" id="disc-purchase-link-wrap">
+          <p class="disc-purchase__link-label">Link do dysku</p>
+          <div class="disc-purchase__link-row">
+            <input type="text" class="disc-purchase__link-input" id="disc-purchase-link" readonly aria-label="Link do dysku" placeholder="Link zostanie uzupełniony">
+            <button type="button" class="disc-purchase__link-copy" id="disc-purchase-link-copy">Kopiuj</button>
+          </div>
+        </div>
+        <button type="button" class="disc-purchase__confirm" id="disc-purchase-claim">Odbierz swój dysk</button>
+        <p class="token-modal__note">Kliknij, aby otworzyć dysk w nowej karcie.</p>
+      </div>
     </div>
   </div>
 
