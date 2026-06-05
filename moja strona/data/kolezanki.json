@@ -1,0 +1,12 @@
+[
+  {"id":1,"imie":"Natalia","wiek":22,"miasto":"WARSZAWA","bio":"Studia, wino i ironia - mój zestaw","aktywnosci":142,"status":"online"},
+  {"id":2,"imie":"Wiktoria","wiek":23,"miasto":"KRAKÓW","bio":"Po nockach w szpitalu trudno zasnąć ✨","aktywnosci":89,"status":"online"},
+  {"id":3,"imie":"Kasia","wiek":21,"miasto":"WROCŁAW","bio":"Sztuka, tatuaże, dziwne nocki 🎨","aktywnosci":167,"status":"online"},
+  {"id":4,"imie":"Patrycja","wiek":24,"miasto":"WARSZAWA","bio":"Wymagająca. Postaraj się.","aktywnosci":203,"status":"online"},
+  {"id":5,"imie":"Oliwia","wiek":22,"miasto":"WARSZAWA","bio":"Życie to impreza, dołącz jeśli nadążysz","aktywnosci":311,"status":"online"},
+  {"id":6,"imie":"Marysia","wiek":25,"miasto":"GDAŃSK","bio":"DJ-ka. Bez filtra, bez ściemy.","aktywnosci":178,"status":"online"},
+  {"id":7,"imie":"Zuzia","wiek":21,"miasto":"POZNAŃ","bio":"Barmanka, studentka, lubię flirt ✨","aktywnosci":96,"status":"online"},
+  {"id":8,"imie":"Ala","wiek":23,"miasto":"ŁÓDŹ","bio":"Pisze poezje o północy, wino i ty","aktywnosci":54,"status":"online"},
+  {"id":9,"imie":"Maja","wiek":24,"miasto":"SOPOT","bio":"Książki, plaża, głębokie rozmowy","aktywnosci":121,"status":"online"},
+  {"id":10,"imie":"Hania","wiek":22,"miasto":"KRAKÓW","bio":"Joga, mindfulness, open mind 🧘","aktywnosci":87,"status":"online"}
+]

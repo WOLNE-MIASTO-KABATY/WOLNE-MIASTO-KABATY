@@ -191,20 +191,20 @@ function bindAttachButton(button) {
 }
 
 const profiles = [
-  { id: 1, name: 'Karolina', age: 24, city: 'Warszawa', bio: 'Szukam kogoś na wieczorne rozmowy... 💬', image: 'images/profiles/karolina.png' },
-  { id: 2, name: 'Natalia', age: 26, city: 'Kraków', bio: 'Kawa, spacer i dobra rozmowa — to mój plan ☕', image: 'images/profiles/natalia.png' },
-  { id: 3, name: 'Monika', age: 23, city: 'Wrocław', bio: 'Lubię spontaniczne wieczory i śmiech 😄', image: 'images/profiles/monika.png' },
-  { id: 4, name: 'Aleksandra', age: 28, city: 'Gdańsk', bio: 'Miłośniczka podróży — opowiedz mi o swoich planach ✈️', image: 'images/profiles/aleksandra.png' },
-  { id: 5, name: 'Weronika', age: 25, city: 'Poznań', bio: 'Szukam kogoś z poczuciem humoru 😊', image: 'images/profiles/weronika.png' },
-  { id: 6, name: 'Maja', age: 27, city: 'Łódź', bio: 'Wieczory przy winie i dobrej muzyce 🍷', image: 'images/profiles/magdalena.png' },
-  { id: 7, name: 'Zuzia', age: 22, city: 'Szczecin', bio: 'Uwielbiam długie spacery nad wodą 🌊', image: 'images/profiles/patrycja.png' },
-  { id: 8, name: 'Oliwka', age: 29, city: 'Lublin', bio: 'Książki, serial i ktoś do rozmowy 📚', image: 'images/profiles/joanna.png' },
-  { id: 9, name: 'Wika', age: 24, city: 'Katowice', bio: 'Energiczna — zawsze coś w planie ⚡', image: 'images/profiles/paulina.png' },
-  { id: 10, name: 'Domcia', age: 26, city: 'Białystok', bio: 'Szukam szczerej rozmowy bez pośpiechu 💫', image: 'images/profiles/zuzanna.png', available: true },
+  { id: 1, name: 'Natalia', age: 22, city: 'WARSZAWA', bio: 'Studia, wino i ironia - mój zestaw', image: 'images/kolezanki/1/avatar.jpg' },
+  { id: 2, name: 'Wiktoria', age: 23, city: 'KRAKÓW', bio: 'Po nockach w szpitalu trudno zasnąć ✨', image: 'images/kolezanki/2/avatar.jpg' },
+  { id: 3, name: 'Kasia', age: 21, city: 'WROCŁAW', bio: 'Sztuka, tatuaże, dziwne nocki 🎨', image: 'images/kolezanki/3/avatar.jpg' },
+  { id: 4, name: 'Patrycja', age: 24, city: 'WARSZAWA', bio: 'Wymagająca. Postaraj się.', image: 'images/kolezanki/4/avatar.jpg' },
+  { id: 5, name: 'Oliwia', age: 22, city: 'WARSZAWA', bio: 'Życie to impreza, dołącz jeśli nadążysz', image: 'images/kolezanki/5/avatar.jpg' },
+  { id: 6, name: 'Marysia', age: 25, city: 'GDAŃSK', bio: 'DJ-ka. Bez filtra, bez ściemy.', image: 'images/kolezanki/6/avatar.jpg' },
+  { id: 7, name: 'Zuzia', age: 21, city: 'POZNAŃ', bio: 'Barmanka, studentka, lubię flirt ✨', image: 'images/kolezanki/7/avatar.jpg' },
+  { id: 8, name: 'Ala', age: 23, city: 'ŁÓDŹ', bio: 'Pisze poezje o północy, wino i ty', image: 'images/kolezanki/8/avatar.jpg' },
+  { id: 9, name: 'Maja', age: 24, city: 'SOPOT', bio: 'Książki, plaża, głębokie rozmowy', image: 'images/kolezanki/9/avatar.jpg' },
+  { id: 10, name: 'Hania', age: 22, city: 'KRAKÓW', bio: 'Joga, mindfulness, open mind 🧘', image: 'images/kolezanki/10/avatar.jpg' },
 ];
 
 /** Uzupełnia status dostępności (zielona / czerwona flara) */
-const PROFILE_AVAILABLE_IDS = new Set([1, 2, 4, 5, 6, 8, 9, 10]);
+const PROFILE_AVAILABLE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
 profiles.forEach((p) => {
   if (p.available === undefined) {
@@ -235,17 +235,206 @@ const PRICING_SHOP_ITEMS = [
 ];
 
 const INBOX_META = {
-  1: { preview: 'Hej! Cieszę się, że się odezwałeś 😊', time: '2 min', unread: 2 },
-  2: { preview: 'Kawa, spacer i dobra rozmowa...', time: '15 min', unread: 0 },
-  3: { preview: 'Lubię spontaniczne wieczory 😄', time: '1 godz.', unread: 1 },
-  4: { preview: 'Opowiedz mi o swoich planach ✈️', time: '3 godz.', unread: 0 },
-  5: { preview: 'Szukam kogoś z humorem 😊', time: 'Wczoraj', unread: 1 },
-  6: { preview: 'Masz plany na wieczór? 🍷', time: '5 min', unread: 1 },
-  7: { preview: 'Spacer nad Odrą brzmi dobrze...', time: '22 min', unread: 0 },
-  8: { preview: 'Polecisz jakiś dobry serial?', time: '2 godz.', unread: 0 },
-  9: { preview: 'Może spotkamy się w weekend?', time: '4 godz.', unread: 2 },
-  10: { preview: 'Bez pośpiechu — napisz kiedy chcesz 💫', time: 'Wczoraj', unread: 0 },
+  1: { time: '2 min' },
+  2: { time: '15 min' },
+  3: { time: '1 godz.' },
+  4: { time: '3 godz.' },
+  5: { time: 'Wczoraj' },
+  6: { time: '5 min' },
+  7: { time: '22 min' },
+  8: { time: '2 godz.' },
+  9: { time: '4 godz.' },
+  10: { time: 'Wczoraj' },
 };
+
+function chatHistoryKey(profileId) {
+  return `chat_history_${profileId}`;
+}
+
+function chatUpdatedKey(profileId) {
+  return `chat_updated_${profileId}`;
+}
+
+function chatStartStorageKey(profileId) {
+  return `chat_start_${profileId}`;
+}
+
+function loadProfileChatHistory(profileId) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(chatHistoryKey(profileId)) || '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function stripInboxPhotoTag(text) {
+  return (text || '').replace(/\s*\[SEND_PHOTO\]\s*/gi, '').trim();
+}
+
+function inboxHasPhotoTag(text) {
+  return /\[SEND_PHOTO\]/i.test(text || '');
+}
+
+function getLastProfileChatSnippet(history) {
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const msg = history[i];
+    const text = stripInboxPhotoTag(msg.content);
+    if (text) return { role: msg.role, text };
+    if (inboxHasPhotoTag(msg.content)) return { role: msg.role, text: 'Zdjęcie' };
+  }
+  return null;
+}
+
+function getProfileChatUpdatedAt(profileId) {
+  const updated = parseInt(localStorage.getItem(chatUpdatedKey(profileId)), 10);
+  if (Number.isFinite(updated)) return updated;
+  const started = parseInt(localStorage.getItem(chatStartStorageKey(profileId)), 10);
+  return Number.isFinite(started) ? started : 0;
+}
+
+function formatInboxRelativeTime(timestamp) {
+  if (!timestamp) return '';
+  const diffMs = Date.now() - timestamp;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Teraz';
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} godz.`;
+  if (hours < 48) return 'Wczoraj';
+  const days = Math.floor(hours / 24);
+  return days === 1 ? 'Wczoraj' : `${days} dni`;
+}
+
+function getInboxContactMeta(profile) {
+  const history = loadProfileChatHistory(profile.id);
+  const last = getLastProfileChatSnippet(history);
+  const updatedAt = getProfileChatUpdatedAt(profile.id);
+
+  if (last) {
+    const previewText = last.role === 'user' ? `Ty: ${last.text}` : last.text;
+    const preview =
+      previewText.length > 72 ? `${previewText.slice(0, 72).trim()}…` : previewText;
+    return {
+      preview,
+      time: formatInboxRelativeTime(updatedAt),
+      unread: 0,
+      sortKey: updatedAt || 1,
+      hasChat: true,
+    };
+  }
+
+  return {
+    preview: profile.bio,
+    time: INBOX_META[profile.id]?.time || '',
+    unread: 0,
+    sortKey: 0,
+    hasChat: false,
+  };
+}
+
+function appendInboxTextBubble(container, text, fromUser) {
+  if (!container || !text) return;
+  const bubble = document.createElement('div');
+  bubble.className = `inbox-bubble inbox-bubble--${fromUser ? 'me' : 'her'}`;
+  bubble.textContent = text;
+  container.appendChild(bubble);
+}
+
+function renderInboxThreadMessages(profileId, profile) {
+  const messagesEl = document.getElementById('inbox-thread-messages');
+  if (!messagesEl) return;
+
+  const history = loadProfileChatHistory(profileId);
+  messagesEl.innerHTML = '';
+
+  if (!history.length) {
+    const empty = document.createElement('div');
+    empty.className = 'inbox-thread__empty-history';
+    empty.innerHTML = `
+      <p class="inbox-thread__empty-history-text">Nie masz jeszcze rozmowy z ${profile.name}.</p>
+      <a href="chat.html?id=${profileId}" class="btn btn--primary">Napisz wiadomość</a>
+    `;
+    messagesEl.appendChild(empty);
+    return;
+  }
+
+  history.forEach((msg) => {
+    if (msg.role === 'user') {
+      const text = stripInboxPhotoTag(msg.content);
+      if (text) appendInboxTextBubble(messagesEl, text, true);
+      return;
+    }
+    if (msg.role === 'assistant') {
+      const text = stripInboxPhotoTag(msg.content);
+      if (text) appendInboxTextBubble(messagesEl, text, false);
+    }
+  });
+
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+/** AI czat — blokady profili (localStorage) */
+const CHAT_TALKED_TO_KEY = 'talked_to';
+const CHAT_COOLDOWN_KEY = 'cooldown_until';
+let profileCooldownInterval = null;
+
+function getChatTalkedTo() {
+  try {
+    const raw = localStorage.getItem(CHAT_TALKED_TO_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(Number) : [];
+  } catch {
+    return [];
+  }
+}
+
+function getChatCooldownUntil() {
+  const n = parseInt(localStorage.getItem(CHAT_COOLDOWN_KEY), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function isProfileChatCooldownActive() {
+  return Date.now() < getChatCooldownUntil();
+}
+
+function formatProfileChatCountdown(ms) {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${String(sec).padStart(2, '0')}`;
+}
+
+function getProfileChatButtonHtml(profileId) {
+  const talkedTo = getChatTalkedTo();
+  if (talkedTo.includes(profileId)) {
+    return '<span class="profile-card__btn profile-card__btn--ended" aria-disabled="true">Zakończona</span>';
+  }
+  if (isProfileChatCooldownActive()) {
+    const remaining = getChatCooldownUntil() - Date.now();
+    return `<span class="profile-card__btn profile-card__btn--cooldown" data-cooldown-profile="${profileId}">Dostępna za ${formatProfileChatCountdown(remaining)}</span>`;
+  }
+  return `<a href="chat.html?id=${profileId}" class="profile-card__btn profile-card__btn--chat">Napisz wiadomość</a>`;
+}
+
+function tickProfileCooldownButtons() {
+  const remaining = getChatCooldownUntil() - Date.now();
+  if (remaining <= 0) {
+    clearInterval(profileCooldownInterval);
+    profileCooldownInterval = null;
+    renderProfiles();
+    return;
+  }
+  document.querySelectorAll('[data-cooldown-profile]').forEach((el) => {
+    el.textContent = `Dostępna za ${formatProfileChatCountdown(remaining)}`;
+  });
+}
+
+function startProfileCooldownTicker() {
+  if (profileCooldownInterval) clearInterval(profileCooldownInterval);
+  if (!isProfileChatCooldownActive()) return;
+  profileCooldownInterval = setInterval(tickProfileCooldownButtons, 1000);
+}
 
 let activeInboxId = null;
 
@@ -382,8 +571,7 @@ function renderProfiles() {
         <p class="profile-card__city">${p.city}</p>
         <p class="profile-card__bio">${p.bio}</p>
         <div class="profile-card__actions">
-          <button type="button" class="profile-card__attach" data-attach-profile="${p.id}" aria-label="Załącz plik">${ATTACH_ICON}</button>
-          <button type="button" class="profile-card__btn" data-open-chat="${p.id}">Napisz wiadomość</button>
+          ${getProfileChatButtonHtml(p.id)}
         </div>
       </div>
     </article>
@@ -394,7 +582,7 @@ function renderProfiles() {
   grid.querySelectorAll('.profile-card').forEach((card) => {
     const id = Number(card.dataset.profileId);
     card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-open-chat], [data-attach-profile]')) return;
+      if (e.target.closest('.profile-card__btn--chat, .profile-card__btn--ended, .profile-card__btn--cooldown')) return;
       openInbox(id);
     });
     card.addEventListener('keydown', (e) => {
@@ -405,14 +593,11 @@ function renderProfiles() {
     });
   });
 
-  grid.querySelectorAll('[data-open-chat]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openInbox(Number(btn.dataset.openChat));
-    });
+  grid.querySelectorAll('.profile-card__btn--chat').forEach((link) => {
+    link.addEventListener('click', (e) => e.stopPropagation());
   });
 
-  grid.querySelectorAll('[data-attach-profile]').forEach((btn) => bindAttachButton(btn));
+  startProfileCooldownTicker();
 }
 
 function getProfile(id) {
@@ -1684,6 +1869,9 @@ function openInbox(profileId = null) {
   inbox.classList.add('is-open');
   inbox.setAttribute('aria-hidden', 'false');
   document.body.classList.add('inbox-open');
+  if (window.location.hash !== '#messages') {
+    history.replaceState(null, '', '#messages');
+  }
   closeWalletDropdown();
   closeRegisterPanel();
   closeTokenShop();
@@ -1691,12 +1879,17 @@ function openInbox(profileId = null) {
   closeSidebarMenu();
   setSidebarActiveLink('open-inbox');
 
+  document.getElementById('inbox-sidebar')?.classList.remove('is-hidden-mobile');
+  const emptyEl = document.getElementById('inbox-empty');
+  if (emptyEl) emptyEl.style.display = '';
+
   renderInboxContacts();
 
   if (profileId) {
     selectInboxContact(profileId);
   } else if (window.innerWidth > 768 && profiles.length) {
-    selectInboxContact(profiles[0].id);
+    const withChat = profiles.find((p) => loadProfileChatHistory(p.id).length > 0);
+    selectInboxContact(withChat ? withChat.id : profiles[0].id);
   } else {
     showInboxEmptyState();
   }
@@ -1710,6 +1903,12 @@ function closeInbox() {
   inbox.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('inbox-open');
   activeInboxId = null;
+  document.getElementById('inbox-sidebar')?.classList.remove('is-hidden-mobile');
+  document.getElementById('inbox-chat')?.classList.remove('has-thread');
+
+  if (window.location.hash === '#messages') {
+    history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+  }
 
   let current = 'hero';
   ['hero', 'profiles', 'discs', 'gry', 'komiksy', 'about', 'contact'].forEach((id) => {
@@ -1727,10 +1926,11 @@ function showInboxEmptyState() {
 
   thread.hidden = true;
   chat?.classList.remove('has-thread');
+  sidebar?.classList.remove('is-hidden-mobile');
+
   if (window.innerWidth <= 768) {
-    empty.style.display = 'flex';
-    sidebar?.classList.remove('is-hidden-mobile');
-  } else {
+    if (empty) empty.style.display = 'none';
+  } else if (empty) {
     empty.style.display = '';
   }
 }
@@ -1740,18 +1940,20 @@ function renderInboxContacts(filter = '') {
   if (!list) return;
 
   const q = filter.trim().toLowerCase();
-  const filtered = profiles.filter((p) => {
-    if (!q) return true;
-    return (
-      p.name.toLowerCase().includes(q) ||
-      p.city.toLowerCase().includes(q) ||
-      String(p.age).includes(q)
-    );
-  });
+  const filtered = profiles
+    .filter((p) => {
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        String(p.age).includes(q)
+      );
+    })
+    .map((p) => ({ profile: p, meta: getInboxContactMeta(p) }))
+    .sort((a, b) => b.meta.sortKey - a.meta.sortKey || a.profile.name.localeCompare(b.profile.name));
 
   list.innerHTML = filtered
-    .map((p) => {
-      const meta = INBOX_META[p.id] || { preview: CHAT_MESSAGES[0], time: 'Teraz', unread: 0 };
+    .map(({ profile: p, meta }) => {
       const isActive = activeInboxId === p.id;
       return `
       <li role="listitem">
@@ -1818,16 +2020,7 @@ function selectInboxContact(profileId) {
   }
 
   if (messagesEl) {
-    messagesEl.innerHTML = '';
-    CHAT_MESSAGES.forEach((text, i) => {
-      setTimeout(() => {
-        const bubble = document.createElement('div');
-        bubble.className = 'inbox-bubble inbox-bubble--her';
-        bubble.textContent = text;
-        messagesEl.appendChild(bubble);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }, 280 + i * 380);
-    });
+    renderInboxThreadMessages(profileId, profile);
   }
 }
 
@@ -1897,6 +2090,36 @@ function initInbox() {
       const pricing = document.getElementById('inbox-pricing');
       if (pricing && !pricing.hidden) closeInboxPricing();
       else closeInbox();
+    }
+  });
+
+  if (window.location.hash === '#messages') {
+    openInbox();
+  }
+
+  window.addEventListener('pageshow', () => {
+    const inboxEl = document.getElementById('inbox');
+    if (!inboxEl?.classList.contains('is-open')) return;
+    const searchVal = document.getElementById('inbox-search')?.value || '';
+    renderInboxContacts(searchVal);
+    if (activeInboxId) selectInboxContact(activeInboxId);
+  });
+
+  window.addEventListener('hashchange', () => {
+    const inboxEl = document.getElementById('inbox');
+    if (window.location.hash === '#messages') {
+      if (!inboxEl?.classList.contains('is-open')) openInbox();
+    } else if (inboxEl?.classList.contains('is-open')) {
+      inboxEl.classList.remove('is-open');
+      inboxEl.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('inbox-open');
+      activeInboxId = null;
+      let current = 'hero';
+      ['hero', 'profiles', 'discs', 'gry', 'komiksy', 'about', 'contact'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 120) current = id;
+      });
+      setSidebarActiveLink(current);
     }
   });
 }

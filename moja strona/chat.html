@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="OFland.pl — Twoje konto">
-  <title>OFland.pl — Konto</title>
+  <meta name="description" content="OFland.pl — czat AI">
+  <title>OFland.pl — Czat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-account">
+<body class="page-chat">
   <div class="app-shell" id="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__head">
@@ -22,7 +22,7 @@
         </div>
         <a href="index.html#hero" class="sidebar__logo">
           <span class="sidebar__logo-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-k)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-k" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
+            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-chat)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-chat" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
           </span>
           <span class="sidebar__logo-text">OFland.pl</span>
         </a>
@@ -47,7 +47,7 @@
       </div>
 
       <nav class="sidebar__nav" id="nav">
-        <a href="index.html#profiles" class="sidebar__link" title="Profile">
+        <a href="index.html#profiles" class="sidebar__link is-active" title="Profile">
           <span class="sidebar__link-icon sidebar__link-icon--profiles" aria-hidden="true">♥</span>
           <span class="sidebar__link-text">Profile</span>
         </a>
@@ -97,7 +97,7 @@
       </div>
     </aside>
 
-    <div class="app-main">
+    <div class="app-main app-main--chat">
       <header class="topbar">
         <div class="topbar__left">
           <button class="nav-toggle" id="nav-toggle" aria-label="Otwórz menu" aria-expanded="false">
@@ -117,7 +117,7 @@
               <span class="topbar__profile-avatar" id="profile-menu-avatar" aria-hidden="true">G</span>
             </button>
             <div class="profile-menu__dropdown" id="profile-menu-dropdown" hidden>
-              <a href="konto.html" class="profile-menu__item profile-menu__item--link is-active" id="profile-menu-account">Konto</a>
+              <a href="konto.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-account">Konto</a>
               <a href="ustawienia.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-settings">Ustawienia</a>
               <button type="button" class="profile-menu__item profile-menu__item--logout" id="profile-menu-logout">Wyloguj</button>
             </div>
@@ -125,37 +125,39 @@
         </div>
       </header>
 
-      <div class="app-main__scroll">
-        <div class="page-center">
-          <section class="account-page" id="account-page">
-            <a href="index.html" class="account-page__back">← Wróć na stronę główną</a>
-            <div class="account-dashboard">
-              <nav class="account-dashboard__nav" role="tablist" aria-label="Panel konta">
-                <button type="button" class="account-dashboard__tab is-active" id="account-tab-btn-konto" role="tab" aria-selected="true" aria-controls="account-tab-konto" data-account-tab="konto">Konto</button>
-                <a href="ustawienia.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-settings">Ustawienia konta</a>
-                <a href="linki-referencyjne.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-referral">Linki referencyjne</a>
-              </nav>
-              <div class="account-dashboard__content">
-                <div class="account-dashboard__panel" id="account-tab-konto" role="tabpanel" aria-labelledby="account-tab-btn-konto">
-                  <h1 class="account-page__title">Twoje konto</h1>
-                  <p class="account-page__subtitle">Podgląd danych zalogowanego użytkownika (demo).</p>
-                  <dl class="account-page__list">
-                    <div class="account-page__row">
-                      <dt class="account-page__label">Login</dt>
-                      <dd class="account-page__value" id="account-username">Gość</dd>
-                    </div>
-                    <div class="account-page__row">
-                      <dt class="account-page__label">E-mail</dt>
-                      <dd class="account-page__value" id="account-email">—</dd>
-                    </div>
-                    <div class="account-page__row">
-                      <dt class="account-page__label">Żetony</dt>
-                      <dd class="account-page__value" id="account-tokens">0</dd>
-                    </div>
-                  </dl>
-                  <button type="button" class="btn btn--primary js-open-token-shop">Doładuj żetony</button>
+      <div class="app-main__scroll app-main__scroll--chat">
+        <div class="page-center page-center--chat">
+          <section class="ai-chat-page" id="ai-chat-page">
+            <div class="ai-chat-panel" id="ai-chat-panel">
+              <header class="ai-chat-header">
+                <a href="index.html#profiles" class="ai-chat-header__back" aria-label="Wróć do profili">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                  <span class="ai-chat-header__back-text">Wróć</span>
+                </a>
+                <div class="ai-chat-header__profile">
+                  <img src="" alt="" class="ai-chat-header__avatar" id="chat-avatar" width="44" height="44">
+                  <div class="ai-chat-header__info">
+                    <span class="ai-chat-header__name" id="chat-name">…</span>
+                    <span class="ai-chat-header__status"><span class="profile-card__online"></span> Online</span>
+                  </div>
                 </div>
+              </header>
+
+              <div class="ai-chat-messages" id="chat-messages" aria-live="polite"></div>
+
+              <div class="ai-chat-typing" id="chat-typing" hidden>
+                <span class="ai-chat-typing__dots"><span></span><span></span><span></span></span>
               </div>
+
+              <footer class="ai-chat-composer">
+                <button type="button" class="ai-chat-composer__attach" disabled aria-label="Załącz plik (wkrótce)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                </button>
+                <input type="text" class="ai-chat-composer__input" id="chat-input" placeholder="Napisz wiadomość..." autocomplete="off">
+                <button type="button" class="ai-chat-composer__send" id="chat-send" aria-label="Wyślij">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                </button>
+              </footer>
             </div>
           </section>
         </div>
@@ -164,6 +166,16 @@
   </div>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+
+  <div class="end-modal" id="chat-end-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="chat-end-title">
+    <div class="end-modal-overlay"></div>
+    <div class="end-modal__panel">
+      <h2 class="end-modal__title" id="chat-end-title">Rozmowa zakończona</h2>
+      <p class="end-modal__text" id="chat-end-text">Aby kontynuować rozmowę, przejdź do jej strony</p>
+      <a href="#" class="btn btn--primary btn--full end-modal__cta" id="chat-end-affiliate">PRZEJDŹ DO STRONY</a>
+      <a href="index.html#profiles" class="btn btn--ghost btn--full">Wróć do profili</a>
+    </div>
+  </div>
 
   <div class="token-modal auth-modal" id="auth-modal" aria-hidden="true" role="dialog" aria-labelledby="auth-modal-title">
     <div class="token-modal__backdrop" id="auth-modal-backdrop"></div>
@@ -225,6 +237,8 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="data/prompts.js"></script>
   <script src="script.js"></script>
+  <script src="chat.js"></script>
 </body>
 </html>
