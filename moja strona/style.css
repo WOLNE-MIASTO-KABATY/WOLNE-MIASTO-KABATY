@@ -1075,6 +1075,34 @@ button {
   color: var(--text);
 }
 
+.disc-card__title-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.disc-card__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.disc-card__lock--open {
+  color: #22c55e;
+}
+
+.disc-card__lock--closed {
+  color: #ef4444;
+}
+
+.disc-card__lock svg {
+  display: block;
+}
+
 .disc-card__bonus {
   font-size: 0.7rem;
   color: var(--accent);
@@ -3011,6 +3039,43 @@ body::after {
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
+.sidebar__discord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e0e7ff;
+  text-decoration: none;
+  background: rgba(88, 101, 242, 0.18);
+  border: 1px solid rgba(88, 101, 242, 0.45);
+  border-radius: 10px;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.sidebar__discord:hover {
+  background: rgba(88, 101, 242, 0.32);
+  border-color: rgba(88, 101, 242, 0.7);
+  transform: translateY(-1px);
+}
+
+.sidebar__discord-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #5865f2;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.sidebar__discord-text {
+  line-height: 1.2;
+}
+
 .sidebar__invite-hint strong {
   color: #93c5fd;
   font-weight: 800;
@@ -3185,6 +3250,7 @@ body::after {
 .app-shell.sidebar-collapsed .btn--sidebar-join,
 .app-shell.sidebar-collapsed .sidebar__invite-hint,
 .app-shell.sidebar-collapsed .sidebar__invite-link,
+.app-shell.sidebar-collapsed .sidebar__discord-text,
 .app-shell.sidebar-collapsed .register-panel--sidebar[hidden] {
   opacity: 0;
   width: 0;
@@ -3298,6 +3364,20 @@ body::after {
   content: '↗';
   font-size: 1rem;
   line-height: 1;
+}
+
+.app-shell.sidebar-collapsed .sidebar__discord {
+  width: 48px;
+  height: 40px;
+  min-width: 48px;
+  padding: 0;
+  margin-top: 0.4rem;
+  gap: 0;
+}
+
+.app-shell.sidebar-collapsed .sidebar__discord-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .topbar {
@@ -4389,6 +4469,22 @@ body::after {
   border: 1px solid var(--card-border);
   background: rgba(15, 23, 42, 0.55);
   text-align: center;
+}
+
+.content-hub__card--placeholder {
+  min-height: 148px;
+  padding: 0;
+  border-style: dashed;
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.28);
+}
+
+#gry .content-hub__card--placeholder {
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+#komiksy .content-hub__card--placeholder {
+  border-color: rgba(251, 113, 133, 0.2);
 }
 
 .content-hub__card-icon {

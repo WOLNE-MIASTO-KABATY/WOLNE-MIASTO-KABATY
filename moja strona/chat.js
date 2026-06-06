@@ -1,5 +1,5 @@
 /**
- * OFland.pl — AI czat (OpenRouter)
+ * DyskiHub.pl — AI czat (OpenRouter)
  */
 
 // ⚠️ WKLEJ TUTAJ SWÓJ KLUCZ OPENROUTER:

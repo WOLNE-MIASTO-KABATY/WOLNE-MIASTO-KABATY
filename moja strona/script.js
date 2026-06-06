@@ -1,5 +1,5 @@
 /**
- * OFland.pl — profile data & chat system
+ * DyskiHub.pl — profile data & chat system
  * Edit profiles array to add/change cards. Replace #LINK_N with affiliate URLs.
  */
 
@@ -125,12 +125,29 @@ function markDiscUnlocked(discId) {
   ids.push(discId);
   localStorage.setItem(UNLOCKED_DISCS_KEY, JSON.stringify(ids));
   refreshDiscClaimButton(discId);
+  renderDiscGrid();
 }
 
 function refreshDiscClaimButton(discId) {
-  document.querySelectorAll(`.disc-card[data-disc-id="${discId}"] .disc-card__claim`).forEach((btn) => {
-    btn.textContent = 'Odbierz swój dysk';
+  const unlocked = isDiscUnlocked(discId);
+  document.querySelectorAll(`.disc-card[data-disc-id="${discId}"]`).forEach((card) => {
+    card.querySelectorAll('.disc-card__claim').forEach((btn) => {
+      btn.textContent = unlocked ? 'Odbierz swój dysk' : 'Odbierz';
+    });
+    card.querySelectorAll('.disc-card__lock').forEach((lock) => {
+      lock.outerHTML = buildDiscLockHtml(discId);
+    });
   });
+}
+
+function buildDiscLockHtml(discId) {
+  const unlocked = isDiscUnlocked(discId);
+  const label = unlocked ? 'Dysk odblokowany' : 'Dysk zablokowany';
+  const mod = unlocked ? 'disc-card__lock--open' : 'disc-card__lock--closed';
+  const icon = unlocked
+    ? '<path d="M7 11V7a5 5 0 0 1 9.5-1M7 11h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  return `<span class="disc-card__lock ${mod}" title="${label}" aria-label="${label}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">${icon}</svg></span>`;
 }
 
 function getDiscLink(item) {
@@ -160,7 +177,13 @@ function getDiscGridItems() {
     popular: i % 6 === 0,
     tag: String(i + 1),
     image: photo,
-  }));
+    gridIndex: i,
+  })).sort((a, b) => {
+    const aUnlocked = isDiscUnlocked(a.discId);
+    const bUnlocked = isDiscUnlocked(b.discId);
+    if (aUnlocked !== bUnlocked) return aUnlocked ? -1 : 1;
+    return a.gridIndex - b.gridIndex;
+  });
 }
 
 const PERSON_ICON = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
@@ -191,16 +214,16 @@ function bindAttachButton(button) {
 }
 
 const profiles = [
-  { id: 1, name: 'Natalia', age: 22, city: 'WARSZAWA', bio: 'Studia, wino i ironia - mój zestaw', image: 'images/kolezanki/1/avatar.jpg' },
-  { id: 2, name: 'Wiktoria', age: 23, city: 'KRAKÓW', bio: 'Po nockach w szpitalu trudno zasnąć ✨', image: 'images/kolezanki/2/avatar.jpg' },
-  { id: 3, name: 'Kasia', age: 21, city: 'WROCŁAW', bio: 'Sztuka, tatuaże, dziwne nocki 🎨', image: 'images/kolezanki/3/avatar.jpg' },
-  { id: 4, name: 'Patrycja', age: 24, city: 'WARSZAWA', bio: 'Wymagająca. Postaraj się.', image: 'images/kolezanki/4/avatar.jpg' },
-  { id: 5, name: 'Oliwia', age: 22, city: 'WARSZAWA', bio: 'Życie to impreza, dołącz jeśli nadążysz', image: 'images/kolezanki/5/avatar.jpg' },
-  { id: 6, name: 'Marysia', age: 25, city: 'GDAŃSK', bio: 'DJ-ka. Bez filtra, bez ściemy.', image: 'images/kolezanki/6/avatar.jpg' },
-  { id: 7, name: 'Zuzia', age: 21, city: 'POZNAŃ', bio: 'Barmanka, studentka, lubię flirt ✨', image: 'images/kolezanki/7/avatar.jpg' },
-  { id: 8, name: 'Ala', age: 23, city: 'ŁÓDŹ', bio: 'Pisze poezje o północy, wino i ty', image: 'images/kolezanki/8/avatar.jpg' },
-  { id: 9, name: 'Maja', age: 24, city: 'SOPOT', bio: 'Książki, plaża, głębokie rozmowy', image: 'images/kolezanki/9/avatar.jpg' },
-  { id: 10, name: 'Hania', age: 22, city: 'KRAKÓW', bio: 'Joga, mindfulness, open mind 🧘', image: 'images/kolezanki/10/avatar.jpg' },
+  { id: 1, name: 'Natalia', age: 20, city: 'WARSZAWA', bio: 'Studia, wino i ironia - mój zestaw', image: 'images/kolezanki/1/avatar.jpg' },
+  { id: 2, name: 'Wika', age: 19, city: 'KRAKÓW', bio: 'Po nockach w szpitalu trudno zasnąć ✨', image: 'images/kolezanki/2/avatar.jpg' },
+  { id: 3, name: 'Monika', age: 18, city: 'WROCŁAW', bio: 'Sztuka, tatuaże, dziwne nocki 🎨', image: 'images/kolezanki/3/avatar.jpg' },
+  { id: 4, name: 'Weronika', age: 19, city: 'WARSZAWA', bio: 'Wymagająca. Postaraj się.', image: 'images/kolezanki/4/avatar.jpg' },
+  { id: 5, name: 'Oliwia', age: 19, city: 'WARSZAWA', bio: 'Życie to impreza, dołącz jeśli nadążysz', image: 'images/kolezanki/5/avatar.jpg' },
+  { id: 6, name: 'Karolina', age: 20, city: 'GDAŃSK', bio: 'DJ-ka. Bez filtra, bez ściemy.', image: 'images/kolezanki/6/avatar.jpg' },
+  { id: 7, name: 'Zuzia', age: 18, city: 'POZNAŃ', bio: 'Barmanka, studentka, lubię flirt ✨', image: 'images/kolezanki/7/avatar.jpg' },
+  { id: 8, name: 'Ala', age: 20, city: 'ŁÓDŹ', bio: 'Pisze poezje o północy, wino i ty', image: 'images/kolezanki/8/avatar.jpg' },
+  { id: 9, name: 'Maja', age: 19, city: 'SOPOT', bio: 'Książki, plaża, głębokie rozmowy', image: 'images/kolezanki/9/avatar.jpg' },
+  { id: 10, name: 'Dominika', age: 20, city: 'KRAKÓW', bio: 'Joga, mindfulness, open mind 🧘', image: 'images/kolezanki/10/avatar.jpg' },
 ];
 
 /** Uzupełnia status dostępności (zielona / czerwona flara) */
@@ -797,7 +820,10 @@ function buildDiscClaimCardHtml(item, variant = 'grid') {
     <article class="disc-card${variantClass}${popularClass}${item.image ? ' disc-card--photo' : ''}" data-disc-id="${item.discId}">
       ${item.popular ? '<span class="disc-card__badge">Hit</span>' : ''}
       ${visual}
-      <span class="disc-card__name">${item.discName}</span>
+      <span class="disc-card__title-row">
+        <span class="disc-card__name">${item.discName}</span>
+        ${buildDiscLockHtml(item.discId)}
+      </span>
       <button type="button" class="disc-card__claim">${isDiscUnlocked(item.discId) ? 'Odbierz swój dysk' : 'Odbierz'}</button>
     </article>
   `;
@@ -1393,13 +1419,25 @@ function getStoredUsers() {
 function getCurrentUser() {
   try {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    if (!user || typeof user !== 'object') return null;
+    const username = typeof user.username === 'string' ? user.username.trim() : '';
+    if (!username) return null;
+    return {
+      username,
+      email: typeof user.email === 'string' ? user.email.trim() : '',
+    };
   } catch {
     return null;
   }
 }
 
 function setCurrentUser(user) {
+  if (!user) {
+    localStorage.removeItem(CURRENT_USER_KEY);
+    return;
+  }
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 }
 
@@ -2141,26 +2179,34 @@ function initScrollAnimations() {
   });
 }
 
+function safeInit(fn) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`Init failed: ${fn.name}`, err);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  captureReferralFromUrl();
-  shuffleProfiles();
-  renderProfiles();
-  renderDiscCarousel();
-  renderDiscGrid();
-  renderTopProfiles();
-  renderDashboardPlans();
-  initHeroSlider();
-  initRegister();
-  initInbox();
-  initSidebarCollapse();
-  initNavbar();
-  initWallet();
-  initProfileMenu();
-  initDiscPurchase();
-  initAccountPage();
-  initAccountSettingsPage();
-  initReferralPage();
-  initScrollAnimations();
+  safeInit(captureReferralFromUrl);
+  safeInit(shuffleProfiles);
+  safeInit(renderProfiles);
+  safeInit(renderDiscCarousel);
+  safeInit(renderDiscGrid);
+  safeInit(renderTopProfiles);
+  safeInit(renderDashboardPlans);
+  safeInit(initHeroSlider);
+  safeInit(initRegister);
+  safeInit(initInbox);
+  safeInit(initSidebarCollapse);
+  safeInit(initNavbar);
+  safeInit(initWallet);
+  safeInit(initProfileMenu);
+  safeInit(initDiscPurchase);
+  safeInit(initAccountPage);
+  safeInit(initAccountSettingsPage);
+  safeInit(initReferralPage);
+  safeInit(initScrollAnimations);
 });
 
 let editModalField = null;
@@ -2177,7 +2223,23 @@ function maskEmail(email) {
 function getUserRecord() {
   const current = getCurrentUser();
   if (!current) return null;
-  return getStoredUsers().find((u) => u.username.toLowerCase() === current.username.toLowerCase()) || null;
+  const users = getStoredUsers();
+  let found = users.find((u) => u.username.toLowerCase() === current.username.toLowerCase());
+  if (found) return found;
+  if (current.email) {
+    found = users.find((u) => u.email?.toLowerCase() === current.email.toLowerCase());
+    if (found) return found;
+  }
+  return null;
+}
+
+function getEditFormDefaults() {
+  const record = getUserRecord();
+  const current = getCurrentUser();
+  return {
+    username: record?.username || current?.username || '',
+    email: record?.email || current?.email || '',
+  };
 }
 
 function saveUsersArray(users) {
@@ -2191,32 +2253,41 @@ function syncCurrentUserFromRecord(record) {
 
 function refreshAccountSettingsView() {
   const user = getUserRecord();
+  const current = getCurrentUser();
   const usernameEl = document.getElementById('settings-username');
   const emailDisplay = document.getElementById('settings-email-display');
   const emailToggle = document.getElementById('settings-email-toggle');
 
   if (!usernameEl || !emailDisplay) return;
 
-  if (!user) {
+  const displayName = user?.username || current?.username;
+  const displayEmail = user?.email || current?.email;
+
+  if (!displayName && !displayEmail) {
     usernameEl.textContent = '—';
     emailDisplay.textContent = '—';
     if (emailToggle) emailToggle.hidden = true;
     return;
   }
 
-  usernameEl.textContent = user.username;
-  if (settingsEmailRevealed) {
-    emailDisplay.textContent = user.email;
-    if (emailToggle) {
-      emailToggle.textContent = 'Ukryj';
-      emailToggle.hidden = false;
+  usernameEl.textContent = displayName || '—';
+  if (displayEmail) {
+    if (settingsEmailRevealed) {
+      emailDisplay.textContent = displayEmail;
+      if (emailToggle) {
+        emailToggle.textContent = 'Ukryj';
+        emailToggle.hidden = false;
+      }
+    } else {
+      emailDisplay.textContent = maskEmail(displayEmail);
+      if (emailToggle) {
+        emailToggle.textContent = 'Pokaż';
+        emailToggle.hidden = false;
+      }
     }
   } else {
-    emailDisplay.textContent = maskEmail(user.email);
-    if (emailToggle) {
-      emailToggle.textContent = 'Pokaż';
-      emailToggle.hidden = false;
-    }
+    emailDisplay.textContent = '—';
+    if (emailToggle) emailToggle.hidden = true;
   }
 
   updateRegisterUI();
@@ -2235,14 +2306,15 @@ function showEditFormError(message) {
 }
 
 function buildEditFormFields(field) {
-  const user = getUserRecord();
   const wrap = document.getElementById('edit-form-fields');
-  if (!wrap || !user) return;
+  if (!wrap) return;
+
+  const { username, email } = getEditFormDefaults();
 
   if (field === 'username') {
     wrap.innerHTML = `
       <label class="register-form__label" for="edit-username">Nowa nazwa użytkownika</label>
-      <input class="register-form__input" type="text" id="edit-username" value="${escapeHtml(user.username)}" minlength="3" maxlength="24" required>
+      <input class="register-form__input" type="text" id="edit-username" value="${escapeHtml(username)}" minlength="3" maxlength="24" required autocomplete="username">
     `;
     return;
   }
@@ -2250,7 +2322,7 @@ function buildEditFormFields(field) {
   if (field === 'email') {
     wrap.innerHTML = `
       <label class="register-form__label" for="edit-email">Nowy adres e-mail</label>
-      <input class="register-form__input" type="email" id="edit-email" value="${escapeHtml(user.email)}" required>
+      <input class="register-form__input" type="email" id="edit-email" value="${escapeHtml(email)}" required autocomplete="email">
     `;
     return;
   }
@@ -2298,11 +2370,13 @@ function openEditModal(field) {
 
   closeWalletDropdown();
   closeProfileMenu();
+  closeTokenShop();
   modal.classList.add('is-open');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-  const firstInput = document.querySelector('#edit-form-fields .register-form__input');
-  firstInput?.focus();
+  requestAnimationFrame(() => {
+    document.querySelector('#edit-form-fields .register-form__input')?.focus();
+  });
 }
 
 function closeEditModal() {
@@ -2324,11 +2398,17 @@ function handleEditSubmit(e) {
   showEditFormError('');
 
   const user = getUserRecord();
-  if (!user || !editModalField) return;
+  if (!user || !editModalField) {
+    showEditFormError('Nie znaleziono konta. Zaloguj się ponownie.');
+    return;
+  }
 
   const users = getStoredUsers();
   const idx = users.findIndex((u) => u.username.toLowerCase() === user.username.toLowerCase());
-  if (idx === -1) return;
+  if (idx === -1) {
+    showEditFormError('Nie znaleziono konta. Zaloguj się ponownie.');
+    return;
+  }
 
   if (editModalField === 'username') {
     const username = document.getElementById('edit-username')?.value.trim();
@@ -2391,24 +2471,29 @@ function handleEditSubmit(e) {
 
 function initAccountSettingsPage() {
   const page = document.getElementById('account-settings-page');
-  if (!page) return;
+  if (!page || page.dataset.settingsReady) return;
+  page.dataset.settingsReady = '1';
 
-  if (!getCurrentUser()) {
-    window.location.href = 'index.html';
-    return;
-  }
-
-  updateRegisterUI();
-  updateTokenUI(getTokenBalance());
-  refreshAccountSettingsView();
-
-  document.querySelectorAll('[data-edit]').forEach((btn) => {
-    btn.addEventListener('click', () => openEditModal(btn.dataset.edit));
+  page.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-edit]');
+    if (!btn || !page.contains(btn)) return;
+    e.preventDefault();
+    openEditModal(btn.dataset.edit);
   });
 
   document.getElementById('edit-modal-close')?.addEventListener('click', closeEditModal);
   document.getElementById('edit-modal-backdrop')?.addEventListener('click', closeEditModal);
   document.getElementById('edit-form')?.addEventListener('submit', handleEditSubmit);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('edit-modal');
+    if (modal?.classList.contains('is-open')) closeEditModal();
+  });
+
+  updateRegisterUI();
+  updateTokenUI(getTokenBalance());
+  refreshAccountSettingsView();
 
   document.getElementById('settings-email-toggle')?.addEventListener('click', () => {
     settingsEmailRevealed = !settingsEmailRevealed;
