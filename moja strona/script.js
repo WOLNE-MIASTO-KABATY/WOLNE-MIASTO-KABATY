@@ -2023,12 +2023,14 @@ async function selectInboxContact(profileId) {
   const profile = profiles.find((p) => p.id === profileId);
   if (!profile) return;
 
+  const thread = document.getElementById('inbox-thread');
+  const wasAlreadyOpen = activeInboxId === profileId && thread && !thread.hidden;
+
   activeInboxId = profileId;
   closeInboxPricing();
   renderInboxContacts(document.getElementById('inbox-search')?.value || '');
 
   const empty = document.getElementById('inbox-empty');
-  const thread = document.getElementById('inbox-thread');
   const chat = document.getElementById('inbox-chat');
   const sidebar = document.getElementById('inbox-sidebar');
   const affiliate = document.getElementById('inbox-thread-affiliate');
@@ -2056,7 +2058,7 @@ async function selectInboxContact(profileId) {
     affiliateLink.id = `affiliate-link-inbox-${profileId}`;
   }
 
-  if (window.AiChat) {
+  if (window.AiChat && !wasAlreadyOpen) {
     await window.AiChat.activateInbox(profileId);
   }
 }
@@ -2068,16 +2070,23 @@ function showInboxAffiliateOverlay() {
   if (composer) composer.style.visibility = 'hidden';
 }
 
+let inboxSendLocked = false;
+
 async function sendInboxMessage() {
   const input = document.getElementById('inbox-thread-input');
   if (!input || !activeInboxId || !window.AiChat) return;
-  if (window.AiChat.isPaused()) return;
+  if (window.AiChat.isPaused() || inboxSendLocked) return;
 
   const text = input.value.trim();
   if (!text) return;
 
   input.value = '';
-  await window.AiChat.sendMessage(text);
+  inboxSendLocked = true;
+  try {
+    await window.AiChat.sendMessage(text);
+  } finally {
+    inboxSendLocked = false;
+  }
 }
 
 function initInbox() {
@@ -2136,7 +2145,6 @@ function initInbox() {
     if (!inboxEl?.classList.contains('is-open')) return;
     const searchVal = document.getElementById('inbox-search')?.value || '';
     renderInboxContacts(searchVal);
-    if (activeInboxId) selectInboxContact(activeInboxId);
   });
 
   window.addEventListener('hashchange', () => {

@@ -19,6 +19,9 @@ let timerHandle = null;
 let chatPaused = false;
 let typingBubbleEl = null;
 let replyQueue = Promise.resolve();
+let welcomeInFlight = null;
+let activateInFlight = null;
+let userSendLocked = false;
 
 const CHAT_PAGE_UI = {
   messagesId: 'chat-messages',
@@ -435,7 +438,13 @@ function buildApiMessagesUpTo(endIndex) {
   return messages;
 }
 
-async function fetchWelcomeMessage() {
+async function fetchWelcomeMessageOnce() {
+  const stored = loadHistory(kolezankaId);
+  if (stored.length > 0) {
+    chatHistory = stored;
+    return;
+  }
+
   const apiPromise = callOpenRouter(buildApiMessages(true));
 
   try {
@@ -446,6 +455,9 @@ async function fetchWelcomeMessage() {
     const message = trimWelcomeReply(reply);
     await waitFullTypingDuration(message);
     setTyping(false);
+
+    if (loadHistory(kolezankaId).length > 0) return;
+
     appendTextBubble(message, false);
     chatHistory.push({ role: 'assistant', content: message });
     saveHistory();
@@ -454,10 +466,35 @@ async function fetchWelcomeMessage() {
     if (!typingBubbleEl) setTyping(true);
     await waitFullTypingDuration(fallback);
     setTyping(false);
+
+    if (loadHistory(kolezankaId).length > 0) return;
+
     appendTextBubble(fallback, false);
     chatHistory.push({ role: 'assistant', content: fallback });
     saveHistory();
     console.error(err);
+  }
+}
+
+async function fetchWelcomeMessage() {
+  const stored = loadHistory(kolezankaId);
+  if (stored.length > 0) {
+    chatHistory = stored;
+    return;
+  }
+
+  if (welcomeInFlight?.id === kolezankaId) {
+    await welcomeInFlight.promise;
+    chatHistory = loadHistory(kolezankaId);
+    return;
+  }
+
+  const promise = fetchWelcomeMessageOnce();
+  welcomeInFlight = { id: kolezankaId, promise };
+  try {
+    await promise;
+  } finally {
+    if (welcomeInFlight?.id === kolezankaId) welcomeInFlight = null;
   }
 }
 
@@ -472,6 +509,7 @@ function enqueueBotReply(task) {
   replyQueue = replyQueue
     .then(() => task())
     .catch((err) => console.error(err));
+  return replyQueue;
 }
 
 async function runBotReplyCycle() {
@@ -511,6 +549,10 @@ async function runBotReplyCycle() {
       await waitFullTypingDuration(fallback);
       setTyping(false);
       appendTextBubble(fallback, false);
+      if (!isUserMessageAlreadyAnswered(userMessageIndex)) {
+        chatHistory.push({ role: 'assistant', content: fallback });
+        saveHistory();
+      }
     } else {
       setTyping(false);
     }
@@ -534,7 +576,13 @@ async function processAssistantReply(rawReply) {
 }
 
 async function sendUserMessage(text) {
-  if (chatPaused || !text.trim()) return;
+  if (chatPaused || !text.trim() || userSendLocked) return;
+
+  userSendLocked = true;
+  const input = getChatInput();
+  const send = getChatSend();
+  if (input) input.disabled = true;
+  if (send) send.disabled = true;
 
   appendTextBubble(text, true);
   chatHistory.push({ role: 'user', content: text });
@@ -549,7 +597,12 @@ async function sendUserMessage(text) {
     startChatTimer();
   }
 
-  enqueueBotReply(runBotReplyCycle);
+  try {
+    await enqueueBotReply(runBotReplyCycle);
+  } finally {
+    userSendLocked = false;
+    if (!chatPaused) enableComposer();
+  }
 }
 
 function disableComposer(message) {
@@ -793,9 +846,11 @@ function resetChatSessionState() {
   typingBubbleEl = null;
   replyQueue = Promise.resolve();
   chatPaused = false;
+  welcomeInFlight = null;
+  userSendLocked = false;
 }
 
-async function activateInboxChat(profileId) {
+async function activateInboxChatInner(profileId) {
   if (!checkAccess(profileId)) return;
 
   chatUi = { ...INBOX_UI };
@@ -815,7 +870,6 @@ async function activateInboxChat(profileId) {
 
   chatHistory = loadHistory(kolezankaId);
   enableComposer();
-
   renderHistoryMessages();
 
   if (getSessionEnd(kolezankaId)) {
@@ -826,6 +880,21 @@ async function activateInboxChat(profileId) {
     }
   } else if (chatHistory.length === 0) {
     await fetchWelcomeMessage();
+  }
+}
+
+async function activateInboxChat(profileId) {
+  if (activateInFlight?.id === profileId) {
+    await activateInFlight.promise;
+    return;
+  }
+
+  const promise = activateInboxChatInner(profileId);
+  activateInFlight = { id: profileId, promise };
+  try {
+    await promise;
+  } finally {
+    if (activateInFlight?.id === profileId) activateInFlight = null;
   }
 }
 
