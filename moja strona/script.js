@@ -290,10 +290,52 @@ function chatStartStorageKey(profileId) {
   return `chat_start_${profileId}`;
 }
 
+function chatSessionEndKey(profileId) {
+  return `chat_session_end_${profileId}`;
+}
+
+const CHAT_STORAGE_VERSION_KEY = 'chat_storage_v2';
+
+function sanitizeChatHistory(arr) {
+  if (!Array.isArray(arr) || !arr.length) return [];
+  const firstUser = arr.findIndex((m) => m.role === 'user');
+  if (firstUser === -1) return [];
+  return arr.slice(firstUser);
+}
+
+function historyHasUserMessage(history) {
+  return Array.isArray(history) && history.some((m) => m.role === 'user');
+}
+
+function migrateChatStorageV2() {
+  if (localStorage.getItem(CHAT_STORAGE_VERSION_KEY) === '1') return;
+
+  for (let id = 1; id <= 10; id += 1) {
+    localStorage.removeItem(chatHistoryKey(id));
+    localStorage.removeItem(chatUpdatedKey(id));
+    localStorage.removeItem(chatStartStorageKey(id));
+    localStorage.removeItem(chatSessionEndKey(id));
+  }
+
+  localStorage.setItem(CHAT_STORAGE_VERSION_KEY, '1');
+}
+
 function loadProfileChatHistory(profileId) {
   try {
-    const arr = JSON.parse(localStorage.getItem(chatHistoryKey(profileId)) || '[]');
-    return Array.isArray(arr) ? arr : [];
+    const raw = JSON.parse(localStorage.getItem(chatHistoryKey(profileId)) || '[]');
+    if (!Array.isArray(raw)) return [];
+
+    const sanitized = sanitizeChatHistory(raw);
+    if (sanitized.length !== raw.length) {
+      if (sanitized.length === 0) {
+        localStorage.removeItem(chatHistoryKey(profileId));
+        localStorage.removeItem(chatUpdatedKey(profileId));
+      } else {
+        localStorage.setItem(chatHistoryKey(profileId), JSON.stringify(sanitized));
+      }
+    }
+
+    return sanitized;
   } catch {
     return [];
   }
@@ -339,6 +381,17 @@ function formatInboxRelativeTime(timestamp) {
 
 function getInboxContactMeta(profile) {
   const history = loadProfileChatHistory(profile.id);
+
+  if (!historyHasUserMessage(history)) {
+    return {
+      preview: profile.bio,
+      time: INBOX_META[profile.id]?.time || '',
+      unread: 0,
+      sortKey: 0,
+      hasChat: false,
+    };
+  }
+
   const last = getLastProfileChatSnippet(history);
   const updatedAt = getProfileChatUpdatedAt(profile.id);
 
@@ -2192,6 +2245,7 @@ function safeInit(fn) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  safeInit(migrateChatStorageV2);
   safeInit(captureReferralFromUrl);
   await loadProfiles();
   safeInit(shuffleProfiles);

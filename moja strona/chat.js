@@ -19,7 +19,6 @@ let timerHandle = null;
 let chatPaused = false;
 let typingBubbleEl = null;
 let replyQueue = Promise.resolve();
-let welcomeInFlight = null;
 let activateInFlight = null;
 let userSendLocked = false;
 
@@ -57,25 +56,13 @@ function openPricingUi() {
   openChatPricingModal();
 }
 
-const WELCOME_INSTRUCTION =
-  'Napisz pierwszą wiadomość powitalną — bardzo krótko, 1–4 słowa. Np: "hejka", "siema", "hej;)", "hej co tam". Jedno krótkie powitanie, naturalnie.';
-
-const WELCOME_FALLBACKS = [
-  'hejka',
-  'siema',
-  'hej;)',
-  'hej co tam',
-  'yo',
-  'hej',
-];
-
 /** Tempo pisania 155–185 znaków/min */
 const TYPING_CPM_MIN = 155;
 const TYPING_CPM_MAX = 185;
 const TYPING_MIN_MS = 1200;
 const TYPING_MAX_MS = 45000;
-const TYPING_REACTION_MIN_MS = 1000;
-const TYPING_REACTION_MAX_MS = 5000;
+const REPLY_DELAY_MIN_MS = 5000;
+const REPLY_DELAY_MAX_MS = 15000;
 
 function typingMsPerChar() {
   const cpm = TYPING_CPM_MIN + Math.random() * (TYPING_CPM_MAX - TYPING_CPM_MIN);
@@ -93,10 +80,9 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitRandomReactionDelay() {
+async function waitBeforeReplyDelay() {
   const ms =
-    TYPING_REACTION_MIN_MS +
-    Math.random() * (TYPING_REACTION_MAX_MS - TYPING_REACTION_MIN_MS);
+    REPLY_DELAY_MIN_MS + Math.random() * (REPLY_DELAY_MAX_MS - REPLY_DELAY_MIN_MS);
   await sleep(Math.round(ms));
 }
 
@@ -115,14 +101,6 @@ function getFirstUnansweredUserIndex() {
     }
   }
   return -1;
-}
-
-function trimWelcomeReply(text) {
-  const clean = text.trim().replace(/^["']|["']$/g, '').split('\n')[0].trim();
-  if (!clean) return WELCOME_FALLBACKS[kolezankaId % WELCOME_FALLBACKS.length];
-  const words = clean.split(/\s+/);
-  if (words.length <= 4 && clean.length <= 40) return clean;
-  return words.slice(0, 4).join(' ');
 }
 
 function getQueryId() {
@@ -149,10 +127,29 @@ function unlockedPhotoKey(profileId, index) {
   return `unlocked_photo_${profileId}_${index}`;
 }
 
+function sanitizeChatHistory(arr) {
+  if (!Array.isArray(arr) || !arr.length) return [];
+  const firstUser = arr.findIndex((m) => m.role === 'user');
+  if (firstUser === -1) return [];
+  return arr.slice(firstUser);
+}
+
 function loadHistory(id) {
   try {
-    const arr = JSON.parse(localStorage.getItem(historyKey(id)) || '[]');
-    return Array.isArray(arr) ? arr : [];
+    const raw = JSON.parse(localStorage.getItem(historyKey(id)) || '[]');
+    if (!Array.isArray(raw)) return [];
+
+    const arr = sanitizeChatHistory(raw);
+    if (arr.length !== raw.length) {
+      if (arr.length === 0) {
+        localStorage.removeItem(historyKey(id));
+        localStorage.removeItem(chatUpdatedKey(id));
+      } else {
+        localStorage.setItem(historyKey(id), JSON.stringify(arr));
+      }
+    }
+
+    return arr;
   } catch {
     return [];
   }
@@ -409,21 +406,6 @@ async function callOpenRouter(messages) {
   return content;
 }
 
-function buildApiMessages(welcomeOnly) {
-  const systemPrompt = window.KOLEZANKI_PROMPTS?.[kolezankaId];
-  if (!systemPrompt) throw new Error('Brak promptu');
-
-  const messages = [{ role: 'system', content: systemPrompt }];
-
-  if (welcomeOnly) {
-    messages.push({ role: 'user', content: WELCOME_INSTRUCTION });
-  } else {
-    chatHistory.forEach((m) => messages.push({ role: m.role, content: m.content }));
-  }
-
-  return messages;
-}
-
 function buildApiMessagesUpTo(endIndex) {
   const systemPrompt = window.KOLEZANKI_PROMPTS?.[kolezankaId];
   if (!systemPrompt) throw new Error('Brak promptu');
@@ -436,66 +418,6 @@ function buildApiMessagesUpTo(endIndex) {
   }
 
   return messages;
-}
-
-async function fetchWelcomeMessageOnce() {
-  const stored = loadHistory(kolezankaId);
-  if (stored.length > 0) {
-    chatHistory = stored;
-    return;
-  }
-
-  const apiPromise = callOpenRouter(buildApiMessages(true));
-
-  try {
-    await waitRandomReactionDelay();
-    setTyping(true);
-
-    const reply = await apiPromise;
-    const message = trimWelcomeReply(reply);
-    await waitFullTypingDuration(message);
-    setTyping(false);
-
-    if (loadHistory(kolezankaId).length > 0) return;
-
-    appendTextBubble(message, false);
-    chatHistory.push({ role: 'assistant', content: message });
-    saveHistory();
-  } catch (err) {
-    const fallback = WELCOME_FALLBACKS[kolezankaId % WELCOME_FALLBACKS.length];
-    if (!typingBubbleEl) setTyping(true);
-    await waitFullTypingDuration(fallback);
-    setTyping(false);
-
-    if (loadHistory(kolezankaId).length > 0) return;
-
-    appendTextBubble(fallback, false);
-    chatHistory.push({ role: 'assistant', content: fallback });
-    saveHistory();
-    console.error(err);
-  }
-}
-
-async function fetchWelcomeMessage() {
-  const stored = loadHistory(kolezankaId);
-  if (stored.length > 0) {
-    chatHistory = stored;
-    return;
-  }
-
-  if (welcomeInFlight?.id === kolezankaId) {
-    await welcomeInFlight.promise;
-    chatHistory = loadHistory(kolezankaId);
-    return;
-  }
-
-  const promise = fetchWelcomeMessageOnce();
-  welcomeInFlight = { id: kolezankaId, promise };
-  try {
-    await promise;
-  } finally {
-    if (welcomeInFlight?.id === kolezankaId) welcomeInFlight = null;
-  }
 }
 
 function handlePhotoSend() {
@@ -518,15 +440,13 @@ async function runBotReplyCycle() {
   const userMessageIndex = getFirstUnansweredUserIndex();
   if (userMessageIndex === -1) return;
 
-  const apiPromise = callOpenRouter(buildApiMessagesUpTo(userMessageIndex));
-
   try {
-    await waitRandomReactionDelay();
+    await waitBeforeReplyDelay();
     if (chatPaused) return;
 
     setTyping(true);
 
-    const reply = await apiPromise;
+    const reply = await callOpenRouter(buildApiMessagesUpTo(userMessageIndex));
     if (chatPaused) {
       setTyping(false);
       return;
@@ -846,7 +766,6 @@ function resetChatSessionState() {
   typingBubbleEl = null;
   replyQueue = Promise.resolve();
   chatPaused = false;
-  welcomeInFlight = null;
   userSendLocked = false;
 }
 
@@ -878,8 +797,6 @@ async function activateInboxChatInner(profileId) {
     } else {
       startChatTimer();
     }
-  } else if (chatHistory.length === 0) {
-    await fetchWelcomeMessage();
   }
 }
 
@@ -943,8 +860,6 @@ async function initAiChat() {
         startChatTimer();
       }
     }
-  } else {
-    await fetchWelcomeMessage();
   }
 }
 
