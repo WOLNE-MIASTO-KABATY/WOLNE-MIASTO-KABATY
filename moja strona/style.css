@@ -2462,6 +2462,11 @@ button {
   min-height: 0;
 }
 
+.inbox-thread__messages .message-bubble--typing {
+  align-self: flex-start;
+  margin-right: auto;
+}
+
 .inbox-thread__empty-history {
   flex: 1;
   display: flex;
@@ -5108,7 +5113,8 @@ body.page-legal::after {
 
 /* ===== AI CHAT (dopisek — nie nadpisuje istniejących stylów) ===== */
 
-a.profile-card__btn--chat {
+a.profile-card__btn--chat,
+button.profile-card__btn--chat {
   flex: 1;
   min-width: 0;
   text-decoration: none;
@@ -5116,6 +5122,8 @@ a.profile-card__btn--chat {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .profile-card__btn--ended,

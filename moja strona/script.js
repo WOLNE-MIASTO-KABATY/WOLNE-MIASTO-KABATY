@@ -262,9 +262,7 @@ const CHAT_MESSAGES = [
 /** Usługi kupowane za żetony (cennik w czacie) */
 const PRICING_SHOP_ITEMS = [
   { id: 'shop-rose', name: 'Wirtualna róża', desc: 'Wyślij prezent w czacie', cost: 15 },
-  { id: 'shop-priority', name: 'Priorytetowa wiadomość', desc: 'Wyróżnij się w skrzynce', cost: 30 },
-  { id: 'shop-photo', name: 'Zdjęcie HD', desc: 'Odblokuj pełną jakość zdjęcia', cost: 50 },
-  { id: 'shop-gift', name: 'Pakiet prezentów', desc: '3 losowe reakcje emoji', cost: 80 },
+  { id: 'shop-photo-unlock', name: 'Odblokowanie zdjęcia', desc: 'Zdejmij blur ze zdjęcia w czacie', cost: 20 },
 ];
 
 const INBOX_META = {
@@ -382,13 +380,6 @@ function renderInboxThreadMessages(profileId, profile) {
   messagesEl.innerHTML = '';
 
   if (!history.length) {
-    const empty = document.createElement('div');
-    empty.className = 'inbox-thread__empty-history';
-    empty.innerHTML = `
-      <p class="inbox-thread__empty-history-text">Nie masz jeszcze rozmowy z ${profile.name}.</p>
-      <a href="chat.html?id=${profileId}" class="btn btn--primary">Napisz wiadomość</a>
-    `;
-    messagesEl.appendChild(empty);
     return;
   }
 
@@ -443,7 +434,7 @@ function getProfileChatButtonHtml(profileId) {
     const remaining = getChatCooldownUntil() - Date.now();
     return `<span class="profile-card__btn profile-card__btn--cooldown" data-cooldown-profile="${profileId}">Dostępna za ${formatProfileChatCountdown(remaining)}</span>`;
   }
-  return `<a href="chat.html?id=${profileId}" class="profile-card__btn profile-card__btn--chat">Napisz wiadomość</a>`;
+  return `<button type="button" class="profile-card__btn profile-card__btn--chat" data-open-inbox="${profileId}">Napisz wiadomość</button>`;
 }
 
 function tickProfileCooldownButtons() {
@@ -622,8 +613,11 @@ function renderProfiles() {
     });
   });
 
-  grid.querySelectorAll('.profile-card__btn--chat').forEach((link) => {
-    link.addEventListener('click', (e) => e.stopPropagation());
+  grid.querySelectorAll('.profile-card__btn--chat').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openInbox(Number(btn.dataset.openInbox));
+    });
   });
 
   startProfileCooldownTicker();
@@ -2025,7 +2019,7 @@ function renderInboxContacts(filter = '') {
   });
 }
 
-function selectInboxContact(profileId) {
+async function selectInboxContact(profileId) {
   const profile = profiles.find((p) => p.id === profileId);
   if (!profile) return;
 
@@ -2039,7 +2033,6 @@ function selectInboxContact(profileId) {
   const sidebar = document.getElementById('inbox-sidebar');
   const affiliate = document.getElementById('inbox-thread-affiliate');
   const affiliateLink = document.getElementById('inbox-affiliate-link');
-  const messagesEl = document.getElementById('inbox-thread-messages');
   const input = document.getElementById('inbox-thread-input');
   const composer = document.querySelector('.inbox-thread__composer');
 
@@ -2063,8 +2056,8 @@ function selectInboxContact(profileId) {
     affiliateLink.id = `affiliate-link-inbox-${profileId}`;
   }
 
-  if (messagesEl) {
-    renderInboxThreadMessages(profileId, profile);
+  if (window.AiChat) {
+    await window.AiChat.activateInbox(profileId);
   }
 }
 
@@ -2075,22 +2068,16 @@ function showInboxAffiliateOverlay() {
   if (composer) composer.style.visibility = 'hidden';
 }
 
-function sendInboxMessage() {
+async function sendInboxMessage() {
   const input = document.getElementById('inbox-thread-input');
-  const messagesEl = document.getElementById('inbox-thread-messages');
-  if (!input || !messagesEl || !activeInboxId) return;
+  if (!input || !activeInboxId || !window.AiChat) return;
+  if (window.AiChat.isPaused()) return;
 
   const text = input.value.trim();
   if (!text) return;
 
-  const bubble = document.createElement('div');
-  bubble.className = 'inbox-bubble inbox-bubble--me';
-  bubble.textContent = text;
-  messagesEl.appendChild(bubble);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
   input.value = '';
-
-  showInboxAffiliateOverlay();
+  await window.AiChat.sendMessage(text);
 }
 
 function initInbox() {
@@ -2118,7 +2105,10 @@ function initInbox() {
   sendBtn?.addEventListener('click', sendInboxMessage);
   bindAttachButton(document.getElementById('inbox-thread-attach'));
   input?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') sendInboxMessage();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      sendInboxMessage();
+    }
   });
 
   document.getElementById('inbox-pricing-open')?.addEventListener('click', () => {

@@ -7,7 +7,7 @@ const MODEL = 'deepseek/deepseek-chat';
 const CHAT_DURATION_MS = 90000;
 const EXTENSION_MS = 600000;
 const EXTENSION_COST = 30;
-const PHOTO_UNLOCK_COST = 10;
+const PHOTO_UNLOCK_COST = 20;
 const PHOTO_TAG = '[SEND_PHOTO]';
 const PRICING_TAG = '[SHOW_PRICING]';
 const TOPUP_TAG = '[SHOW_TOPUP]';
@@ -19,6 +19,40 @@ let timerHandle = null;
 let chatPaused = false;
 let typingBubbleEl = null;
 let replyQueue = Promise.resolve();
+
+const CHAT_PAGE_UI = {
+  messagesId: 'chat-messages',
+  inputId: 'chat-input',
+  sendId: 'chat-send',
+  mode: 'page',
+};
+const INBOX_UI = {
+  messagesId: 'inbox-thread-messages',
+  inputId: 'inbox-thread-input',
+  sendId: 'inbox-thread-send',
+  mode: 'inbox',
+};
+let chatUi = { ...CHAT_PAGE_UI };
+
+function getMessagesBox() {
+  return document.getElementById(chatUi.messagesId);
+}
+
+function getChatInput() {
+  return document.getElementById(chatUi.inputId);
+}
+
+function getChatSend() {
+  return document.getElementById(chatUi.sendId);
+}
+
+function openPricingUi() {
+  if (chatUi.mode === 'inbox' && typeof openInboxPricing === 'function') {
+    openInboxPricing();
+    return;
+  }
+  openChatPricingModal();
+}
 
 const WELCOME_INSTRUCTION =
   'Napisz pierwszą wiadomość powitalną — bardzo krótko, 1–4 słowa. Np: "hejka", "siema", "hej;)", "hej co tam". Jedno krótkie powitanie, naturalnie.';
@@ -176,7 +210,7 @@ function isSessionExpired() {
 }
 
 function setTyping(visible) {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (!box) return;
 
   if (visible) {
@@ -195,7 +229,7 @@ function setTyping(visible) {
 }
 
 function scrollToBottom() {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (box) box.scrollTop = box.scrollHeight;
 }
 
@@ -218,7 +252,7 @@ function parseAssistantTags(text) {
 }
 
 function appendTextBubble(text, fromUser) {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (!box || !text.trim()) return;
 
   const bubble = document.createElement('div');
@@ -229,7 +263,7 @@ function appendTextBubble(text, fromUser) {
 }
 
 function appendActionButtons(actions) {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (!box) return;
   if (!actions.showPricing && !actions.showTopup) return;
 
@@ -241,7 +275,7 @@ function appendActionButtons(actions) {
     btn.type = 'button';
     btn.className = 'chat-action-btn chat-action-btn--pricing';
     btn.textContent = 'Zobacz cennik';
-    btn.addEventListener('click', openChatPricingModal);
+    btn.addEventListener('click', openPricingUi);
     wrap.appendChild(btn);
   }
 
@@ -286,7 +320,7 @@ function tryUnlockPhoto(wrap, profileId, photoIndex) {
 }
 
 function appendPhotoBubble(src, profileId, photoIndex) {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (!box) return;
 
   const blurred = photoIndex > 1 && !isPhotoUnlocked(profileId, photoIndex);
@@ -337,7 +371,7 @@ function countPhotosBeforeHistoryIndex(endIndex) {
 }
 
 function renderHistoryMessages() {
-  const box = document.getElementById('chat-messages');
+  const box = getMessagesBox();
   if (box) box.innerHTML = '';
 
   chatHistory.forEach((msg, idx) => {
@@ -493,6 +527,10 @@ async function processAssistantReply(rawReply) {
   if (parsed.text) appendTextBubble(parsed.text, false);
   if (parsed.showPricing || parsed.showTopup) appendActionButtons(parsed);
   if (parsed.sendPhoto) handlePhotoSend();
+
+  if (typeof renderInboxContacts === 'function' && chatUi.mode === 'inbox') {
+    renderInboxContacts(document.getElementById('inbox-search')?.value || '');
+  }
 }
 
 async function sendUserMessage(text) {
@@ -501,6 +539,10 @@ async function sendUserMessage(text) {
   appendTextBubble(text, true);
   chatHistory.push({ role: 'user', content: text });
   saveHistory();
+
+  if (typeof renderInboxContacts === 'function' && chatUi.mode === 'inbox') {
+    renderInboxContacts(document.getElementById('inbox-search')?.value || '');
+  }
 
   if (!getSessionEnd(kolezankaId)) {
     setSessionEnd(kolezankaId, Date.now() + CHAT_DURATION_MS);
@@ -512,8 +554,8 @@ async function sendUserMessage(text) {
 
 function disableComposer(message) {
   chatPaused = true;
-  const input = document.getElementById('chat-input');
-  const send = document.getElementById('chat-send');
+  const input = getChatInput();
+  const send = getChatSend();
   if (input) {
     input.disabled = true;
     input.placeholder = message || 'Rozmowa wstrzymana';
@@ -523,8 +565,8 @@ function disableComposer(message) {
 
 function enableComposer() {
   chatPaused = false;
-  const input = document.getElementById('chat-input');
-  const send = document.getElementById('chat-send');
+  const input = getChatInput();
+  const send = getChatSend();
   if (input) {
     input.disabled = false;
     input.placeholder = 'Napisz wiadomość...';
@@ -540,7 +582,7 @@ function showExtensionModal() {
   const balanceEl = document.getElementById('chat-extension-balance');
 
   if (text && kolezanka) {
-    text.textContent = `Czas rozmowy z ${kolezanka.imie} minął. Przedłuż o 10 minut za ${EXTENSION_COST} żetonów.`;
+    text.textContent = `Czas rozmowy z ${kolezanka.imie || kolezanka.name} minął. Przedłuż o 10 minut za ${EXTENSION_COST} żetonów.`;
   }
   if (balanceEl && typeof getTokenBalance === 'function') {
     balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
@@ -728,7 +770,73 @@ function setupHeader() {
   if (name) name.textContent = `${kolezanka.imie}, ${kolezanka.wiek}`;
 }
 
+async function resolveKolezanka(id) {
+  if (typeof getProfile === 'function') {
+    const profile = getProfile(id);
+    if (profile) {
+      return { id, imie: profile.name, name: profile.name, wiek: profile.age };
+    }
+  }
+  const res = await fetch('data/kolezanki.json');
+  if (!res.ok) throw new Error('fetch');
+  const list = await res.json();
+  const found = list.find((k) => k.id === id);
+  if (!found) throw new Error('not found');
+  return { ...found, name: found.imie };
+}
+
+function resetChatSessionState() {
+  if (timerHandle) {
+    clearTimeout(timerHandle);
+    timerHandle = null;
+  }
+  typingBubbleEl = null;
+  replyQueue = Promise.resolve();
+  chatPaused = false;
+}
+
+async function activateInboxChat(profileId) {
+  if (!checkAccess(profileId)) return;
+
+  chatUi = { ...INBOX_UI };
+
+  if (kolezankaId !== profileId) {
+    resetChatSessionState();
+  }
+
+  kolezankaId = profileId;
+
+  try {
+    kolezanka = await resolveKolezanka(profileId);
+    if (!window.KOLEZANKI_PROMPTS?.[kolezankaId]) return;
+  } catch {
+    return;
+  }
+
+  chatHistory = loadHistory(kolezankaId);
+  enableComposer();
+
+  renderHistoryMessages();
+
+  if (getSessionEnd(kolezankaId)) {
+    if (isSessionExpired()) {
+      showExtensionModal();
+    } else {
+      startChatTimer();
+    }
+  } else if (chatHistory.length === 0) {
+    await fetchWelcomeMessage();
+  }
+}
+
+window.AiChat = {
+  activateInbox: activateInboxChat,
+  sendMessage: sendUserMessage,
+  isPaused: () => chatPaused,
+};
+
 async function initAiChat() {
+  chatUi = { ...CHAT_PAGE_UI };
   kolezankaId = getQueryId();
   if (!checkAccess(kolezankaId)) {
     redirectProfiles();
@@ -771,4 +879,9 @@ async function initAiChat() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', initAiChat);
+document.addEventListener('DOMContentLoaded', () => {
+  bindModals();
+  if (document.body.classList.contains('page-chat')) {
+    initAiChat();
+  }
+});
