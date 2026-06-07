@@ -173,13 +173,49 @@
 
   <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
 
-  <div class="end-modal" id="chat-end-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="chat-end-title">
+  <div class="end-modal" id="chat-extension-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="chat-extension-title">
     <div class="end-modal-overlay"></div>
     <div class="end-modal__panel">
-      <h2 class="end-modal__title" id="chat-end-title">Rozmowa zakończona</h2>
-      <p class="end-modal__text" id="chat-end-text">Aby kontynuować rozmowę, przejdź do jej strony</p>
-      <a href="#" class="btn btn--primary btn--full end-modal__cta" id="chat-end-affiliate">PRZEJDŹ DO STRONY</a>
-      <a href="index.html#profiles" class="btn btn--ghost btn--full">Wróć do profili</a>
+      <h2 class="end-modal__title" id="chat-extension-title">Czas rozmowy minął</h2>
+      <p class="end-modal__text" id="chat-extension-text">Przedłuż rozmowę o 10 minut za 30 żetonów.</p>
+      <p class="end-modal__balance">Twój stan: <strong id="chat-extension-balance">0</strong> żetonów</p>
+      <button type="button" class="btn btn--primary btn--full" id="chat-extension-extend">Przedłuż o 10 min (30 żetonów)</button>
+      <button type="button" class="btn btn--ghost btn--full" id="chat-extension-topup">Doładuj żetony</button>
+      <button type="button" class="btn btn--ghost btn--full" id="chat-extension-close">Zamknij</button>
+    </div>
+  </div>
+
+  <div class="token-modal" id="chat-pricing-modal" aria-hidden="true" role="dialog" aria-labelledby="chat-pricing-title" hidden>
+    <div class="token-modal__backdrop" id="chat-pricing-backdrop"></div>
+    <div class="token-modal__panel">
+      <header class="token-modal__header">
+        <div>
+          <h2 class="token-modal__title" id="chat-pricing-title">Cennik</h2>
+          <p class="token-modal__subtitle">Usługi premium w czacie</p>
+        </div>
+        <button type="button" class="token-modal__close" id="chat-pricing-close" aria-label="Zamknij">&times;</button>
+      </header>
+      <p class="token-modal__balance">Twój stan: <strong id="chat-pricing-balance">0</strong> żetonów</p>
+      <div class="inbox-pricing__shop" id="chat-pricing-shop"></div>
+    </div>
+  </div>
+
+  <div class="token-modal" id="chat-topup-modal" aria-hidden="true" role="dialog" aria-labelledby="chat-topup-title" hidden>
+    <div class="token-modal__backdrop" id="chat-topup-backdrop"></div>
+    <div class="token-modal__panel">
+      <header class="token-modal__header">
+        <div>
+          <h2 class="token-modal__title" id="chat-topup-title">Jak doładować żetony</h2>
+          <p class="token-modal__subtitle">Wybierz metodę płatności</p>
+        </div>
+        <button type="button" class="token-modal__close" id="chat-topup-close" aria-label="Zamknij">&times;</button>
+      </header>
+      <p class="chat-topup__desc">Żetony odblokowują zdjęcia, przedłużają rozmowę i dają dostęp do usług premium. Możesz doładować konto płatnością kryptowalutą lub przez Discord.</p>
+      <div class="chat-topup__options">
+        <a href="#" class="btn btn--primary btn--full chat-topup__option" id="chat-topup-crypto" target="_blank" rel="noopener noreferrer">Płatność krypto</a>
+        <a href="#" class="btn btn--ghost btn--full chat-topup__option" id="chat-topup-discord" target="_blank" rel="noopener noreferrer">Doładowanie przez Discord</a>
+      </div>
+      <p class="token-modal__note">Linki do płatności zostaną uzupełnione wkrótce.</p>
     </div>
   </div>
 

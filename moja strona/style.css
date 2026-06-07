@@ -5396,6 +5396,79 @@ a.profile-card__btn--chat {
   filter: brightness(1.08);
 }
 
+.message-bubble--actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: #2a3441;
+  border: 1px solid var(--card-border);
+  align-self: flex-start;
+  margin-right: auto;
+  width: fit-content;
+  max-width: min(85%, 280px);
+}
+
+.chat-action-btn {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: filter var(--transition), transform 0.15s ease;
+  text-align: center;
+}
+
+.chat-action-btn--pricing {
+  color: var(--navy-deep);
+  background: linear-gradient(135deg, var(--blue-light), var(--accent-muted));
+  border: none;
+}
+
+.chat-action-btn--topup {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--card-border);
+}
+
+.chat-action-btn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.end-modal__balance {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.end-modal__balance strong {
+  color: var(--blue-light);
+}
+
+.chat-topup__desc {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.chat-topup__options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.chat-topup__option {
+  text-decoration: none;
+  text-align: center;
+}
+
 .message-bubble--typing {
   padding: 0.85rem 1rem;
   min-width: 52px;

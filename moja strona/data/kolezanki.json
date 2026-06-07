@@ -1,12 +1,12 @@
 [
-  {"id":1,"imie":"Natalia","wiek":20,"miasto":"WARSZAWA","bio":"Studia, wino i ironia - mój zestaw","aktywnosci":142,"status":"online"},
-  {"id":2,"imie":"Wika","wiek":19,"miasto":"KRAKÓW","bio":"Po nockach w szpitalu trudno zasnąć ✨","aktywnosci":89,"status":"online"},
-  {"id":3,"imie":"Monika","wiek":18,"miasto":"WROCŁAW","bio":"Sztuka, tatuaże, dziwne nocki 🎨","aktywnosci":167,"status":"online"},
-  {"id":4,"imie":"Weronika","wiek":19,"miasto":"WARSZAWA","bio":"Wymagająca. Postaraj się.","aktywnosci":203,"status":"online"},
-  {"id":5,"imie":"Oliwia","wiek":19,"miasto":"WARSZAWA","bio":"Życie to impreza, dołącz jeśli nadążysz","aktywnosci":311,"status":"online"},
-  {"id":6,"imie":"Karolina","wiek":20,"miasto":"GDAŃSK","bio":"DJ-ka. Bez filtra, bez ściemy.","aktywnosci":178,"status":"online"},
-  {"id":7,"imie":"Zuzia","wiek":18,"miasto":"POZNAŃ","bio":"Barmanka, studentka, lubię flirt ✨","aktywnosci":96,"status":"online"},
-  {"id":8,"imie":"Ala","wiek":20,"miasto":"ŁÓDŹ","bio":"Pisze poezje o północy, wino i ty","aktywnosci":54,"status":"online"},
-  {"id":9,"imie":"Maja","wiek":19,"miasto":"SOPOT","bio":"Książki, plaża, głębokie rozmowy","aktywnosci":121,"status":"online"},
-  {"id":10,"imie":"Dominika","wiek":20,"miasto":"KRAKÓW","bio":"Joga, mindfulness, open mind 🧘","aktywnosci":87,"status":"online"}
+  {"id":1,"imie":"Natalia","wiek":18,"miasto":"WARSZAWA","bio":"Tak jestem altką","aktywnosci":142,"status":"online"},
+  {"id":2,"imie":"Wika","wiek":19,"miasto":"KRAKÓW","bio":"Hejka;) Zapraszam.","aktywnosci":89,"status":"online"},
+  {"id":3,"imie":"Monika","wiek":18,"miasto":"WROCŁAW","bio":"Co tam u ciebie;)","aktywnosci":167,"status":"online"},
+  {"id":4,"imie":"Weronika","wiek":19,"miasto":"WARSZAWA","bio":"pvvvvv","aktywnosci":203,"status":"online"},
+  {"id":5,"imie":"Oliwia","wiek":19,"miasto":"WARSZAWA","bio":"Cała twoja❤️","aktywnosci":311,"status":"online"},
+  {"id":6,"imie":"Karolina","wiek":20,"miasto":"GDAŃSK","bio":"Aktywna teraz, napisz do mnie.","aktywnosci":178,"status":"online"},
+  {"id":7,"imie":"Zuzia","wiek":18,"miasto":"POZNAŃ","bio":"Hejj pvvv","aktywnosci":96,"status":"online"},
+  {"id":8,"imie":"Ala","wiek":20,"miasto":"ŁÓDŹ","bio":"Hejka jestem alternatywką i chce się poznać","aktywnosci":54,"status":"online"},
+  {"id":9,"imie":"Maja","wiek":19,"miasto":"SOPOT","bio":"Ktoś coś?","aktywnosci":121,"status":"online"},
+  {"id":10,"imie":"Dominika","wiek":20,"miasto":"KRAKÓW","bio":"Zapraszam na pv❤️❤️","aktywnosci":87,"status":"online"}
 ]

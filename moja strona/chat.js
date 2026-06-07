@@ -1,50 +1,54 @@
 /**
- * DyskiHub.pl — AI czat (OpenRouter)
+ * DyskiHub.pl — AI czat (OpenRouter via Netlify Function)
  */
 
-// ⚠️ WKLEJ TUTAJ SWÓJ KLUCZ OPENROUTER:
-const OPENROUTER_API_KEY = 'potem';
-
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const CHAT_API_URL = '/.netlify/functions/chat';
 const MODEL = 'deepseek/deepseek-chat';
 const CHAT_DURATION_MS = 90000;
-const COOLDOWN_MS = 600000;
+const EXTENSION_MS = 600000;
+const EXTENSION_COST = 30;
+const PHOTO_UNLOCK_COST = 10;
 const PHOTO_TAG = '[SEND_PHOTO]';
-const TALKED_TO_KEY = 'talked_to';
-const COOLDOWN_KEY = 'cooldown_until';
+const PRICING_TAG = '[SHOW_PRICING]';
+const TOPUP_TAG = '[SHOW_TOPUP]';
 
 let kolezanka = null;
 let kolezankaId = null;
 let chatHistory = [];
 let timerHandle = null;
-let chatEnded = false;
+let chatPaused = false;
 let typingBubbleEl = null;
 let replyQueue = Promise.resolve();
 
 const WELCOME_INSTRUCTION =
-  'Napisz pierwszą wiadomość powitalną — krótko, ale nie jednym słowem. Jedno zdanie, ok. 6–15 słów. Np: "hej, w końcu ktoś normalny pisze" / "siemka, co tam u ciebie?" / "hejka ;) dopiero weszlam na czat". Naturalnie, lekko flirciarsko, bez eseju.';
+  'Napisz pierwszą wiadomość powitalną — bardzo krótko, 1–4 słowa. Np: "hejka", "siema", "hej;)", "hej co tam". Jedno krótkie powitanie, naturalnie.';
 
 const WELCOME_FALLBACKS = [
-  'hej, co tam u ciebie?',
-  'siemka, w końcu ktoś pisze',
-  'hejka ;) co slychac',
-  'siema, co tam',
-  'hej, milego wieczoru',
-  'yo, co tam',
+  'hejka',
+  'siema',
+  'hej;)',
+  'hej co tam',
+  'yo',
+  'hej',
 ];
 
-/** Symulacja tempa pisania — 220 znaków/min (~273 ms/znak) */
-const TYPING_MS_PER_CHAR = 273;
-const TYPING_BASE_MS = 0;
-const TYPING_MIN_MS = 2400;
+/** Tempo pisania 155–185 znaków/min */
+const TYPING_CPM_MIN = 155;
+const TYPING_CPM_MAX = 185;
+const TYPING_MIN_MS = 1200;
 const TYPING_MAX_MS = 45000;
 const TYPING_REACTION_MIN_MS = 1000;
 const TYPING_REACTION_MAX_MS = 5000;
 
+function typingMsPerChar() {
+  const cpm = TYPING_CPM_MIN + Math.random() * (TYPING_CPM_MAX - TYPING_CPM_MIN);
+  return 60000 / cpm;
+}
+
 function estimateTypingDuration(text) {
   const len = Math.max(1, (text || '').trim().length);
-  const jitter = 1.05 + Math.random() * 0.45;
-  const ms = TYPING_BASE_MS + len * TYPING_MS_PER_CHAR * jitter;
+  const jitter = 1.05 + Math.random() * 0.35;
+  const ms = len * typingMsPerChar() * jitter;
   return Math.round(Math.min(TYPING_MAX_MS, Math.max(TYPING_MIN_MS, ms)));
 }
 
@@ -52,7 +56,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Losowa cisza 1–5 s zanim pojawi się dymek „pisze…”. */
 async function waitRandomReactionDelay() {
   const ms =
     TYPING_REACTION_MIN_MS +
@@ -60,7 +63,6 @@ async function waitRandomReactionDelay() {
   await sleep(Math.round(ms));
 }
 
-/** Pełny czas „pisania” z widocznym dymkiem — zależny od liczby znaków. */
 async function waitFullTypingDuration(text) {
   await sleep(estimateTypingDuration(text));
 }
@@ -81,36 +83,13 @@ function getFirstUnansweredUserIndex() {
 function trimWelcomeReply(text) {
   const clean = text.trim().replace(/^["']|["']$/g, '').split('\n')[0].trim();
   if (!clean) return WELCOME_FALLBACKS[kolezankaId % WELCOME_FALLBACKS.length];
-  if (clean.length <= 110 && clean.split(/\s+/).length <= 18) return clean;
-  const firstSentence = clean.split(/[.!?]/)[0].trim();
-  if (firstSentence.length >= 8 && firstSentence.length <= 110) return firstSentence;
-  return clean.slice(0, 100).trim();
+  const words = clean.split(/\s+/);
+  if (words.length <= 4 && clean.length <= 40) return clean;
+  return words.slice(0, 4).join(' ');
 }
 
 function getQueryId() {
   return parseInt(new URLSearchParams(window.location.search).get('id'), 10);
-}
-
-function getTalkedTo() {
-  try {
-    const arr = JSON.parse(localStorage.getItem(TALKED_TO_KEY) || '[]');
-    return Array.isArray(arr) ? arr.map(Number) : [];
-  } catch {
-    return [];
-  }
-}
-
-function addTalkedTo(id) {
-  const arr = getTalkedTo();
-  if (!arr.includes(id)) {
-    arr.push(id);
-    localStorage.setItem(TALKED_TO_KEY, JSON.stringify(arr));
-  }
-}
-
-function isCooldownActive() {
-  const until = parseInt(localStorage.getItem(COOLDOWN_KEY), 10);
-  return Number.isFinite(until) && Date.now() < until;
 }
 
 function historyKey(id) {
@@ -121,8 +100,16 @@ function photoCountKey(id) {
   return `photo_count_${id}`;
 }
 
-function chatStartKey(id) {
-  return `chat_start_${id}`;
+function chatUpdatedKey(id) {
+  return `chat_updated_${id}`;
+}
+
+function sessionEndKey(id) {
+  return `chat_session_end_${id}`;
+}
+
+function unlockedPhotoKey(profileId, index) {
+  return `unlocked_photo_${profileId}_${index}`;
 }
 
 function loadHistory(id) {
@@ -132,10 +119,6 @@ function loadHistory(id) {
   } catch {
     return [];
   }
-}
-
-function chatUpdatedKey(id) {
-  return `chat_updated_${id}`;
 }
 
 function saveHistory() {
@@ -150,8 +133,25 @@ function getPhotoCount(id) {
 }
 
 function incrementPhotoCount(id) {
-  const next = getPhotoCount(id) + 1;
-  localStorage.setItem(photoCountKey(id), String(next));
+  localStorage.setItem(photoCountKey(id), String(getPhotoCount(id) + 1));
+}
+
+function isPhotoUnlocked(profileId, index) {
+  if (index <= 1) return true;
+  return localStorage.getItem(unlockedPhotoKey(profileId, index)) === '1';
+}
+
+function markPhotoUnlocked(profileId, index) {
+  localStorage.setItem(unlockedPhotoKey(profileId, index), '1');
+}
+
+function getSessionEnd(id) {
+  const n = parseInt(localStorage.getItem(sessionEndKey(id)), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function setSessionEnd(id, timestamp) {
+  localStorage.setItem(sessionEndKey(id), String(timestamp));
 }
 
 function avatarPath(id) {
@@ -167,10 +167,12 @@ function redirectProfiles() {
 }
 
 function checkAccess(id) {
-  if (!Number.isFinite(id) || id < 1 || id > 10) return false;
-  if (getTalkedTo().includes(id)) return false;
-  if (isCooldownActive()) return false;
-  return true;
+  return Number.isFinite(id) && id >= 1 && id <= 10;
+}
+
+function isSessionExpired() {
+  const end = getSessionEnd(kolezankaId);
+  return end !== null && Date.now() >= end;
 }
 
 function setTyping(visible) {
@@ -197,6 +199,24 @@ function scrollToBottom() {
   if (box) box.scrollTop = box.scrollHeight;
 }
 
+function stripAllTags(text) {
+  return (text || '')
+    .replace(/\s*\[SEND_PHOTO\]\s*/gi, '')
+    .replace(/\s*\[SHOW_PRICING\]\s*/gi, '')
+    .replace(/\s*\[SHOW_TOPUP\]\s*/gi, '')
+    .trim();
+}
+
+function parseAssistantTags(text) {
+  const raw = text || '';
+  return {
+    text: stripAllTags(raw),
+    sendPhoto: /\[SEND_PHOTO\]/i.test(raw),
+    showPricing: /\[SHOW_PRICING\]/i.test(raw),
+    showTopup: /\[SHOW_TOPUP\]/i.test(raw),
+  };
+}
+
 function appendTextBubble(text, fromUser) {
   const box = document.getElementById('chat-messages');
   if (!box || !text.trim()) return;
@@ -208,12 +228,72 @@ function appendTextBubble(text, fromUser) {
   scrollToBottom();
 }
 
-function appendPhotoBubble(src, blurred) {
+function appendActionButtons(actions) {
+  const box = document.getElementById('chat-messages');
+  if (!box) return;
+  if (!actions.showPricing && !actions.showTopup) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'message-bubble message-bubble--her message-bubble--actions message-bubble--fade';
+
+  if (actions.showPricing) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chat-action-btn chat-action-btn--pricing';
+    btn.textContent = 'Zobacz cennik';
+    btn.addEventListener('click', openChatPricingModal);
+    wrap.appendChild(btn);
+  }
+
+  if (actions.showTopup) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'chat-action-btn chat-action-btn--topup';
+    btn.textContent = 'Jak doładować żetony';
+    btn.addEventListener('click', openTopupModal);
+    wrap.appendChild(btn);
+  }
+
+  box.appendChild(wrap);
+  scrollToBottom();
+}
+
+function unlockPhotoInDom(wrap, profileId, photoIndex) {
+  const photoWrap = wrap.querySelector('.photo-blurred');
+  if (!photoWrap) return;
+  photoWrap.classList.remove('photo-blurred');
+  photoWrap.classList.add('photo-wrap');
+  photoWrap.querySelector('.photo-overlay')?.remove();
+  markPhotoUnlocked(profileId, photoIndex);
+}
+
+function tryUnlockPhoto(wrap, profileId, photoIndex) {
+  const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+  if (balance < PHOTO_UNLOCK_COST) {
+    if (typeof showToast === 'function') {
+      showToast(`Potrzebujesz ${PHOTO_UNLOCK_COST} żetonów. Doładuj konto.`);
+    }
+    openTopupModal();
+    return;
+  }
+  if (typeof setTokenBalance === 'function') {
+    setTokenBalance(balance - PHOTO_UNLOCK_COST);
+  }
+  unlockPhotoInDom(wrap, profileId, photoIndex);
+  if (typeof showToast === 'function') {
+    showToast('Zdjęcie odblokowane!');
+  }
+}
+
+function appendPhotoBubble(src, profileId, photoIndex) {
   const box = document.getElementById('chat-messages');
   if (!box) return;
 
+  const blurred = photoIndex > 1 && !isPhotoUnlocked(profileId, photoIndex);
+
   const wrap = document.createElement('div');
   wrap.className = 'message-bubble message-bubble--her message-bubble--photo message-bubble--fade';
+  wrap.dataset.photoIndex = String(photoIndex);
 
   const photoWrap = document.createElement('div');
   photoWrap.className = blurred ? 'photo-blurred' : 'photo-wrap';
@@ -235,10 +315,8 @@ function appendPhotoBubble(src, blurred) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'unlock-btn';
-    btn.textContent = '🔒 ODBLOKUJ ZDJĘCIE';
-    btn.addEventListener('click', () => {
-      window.location.href = '#';
-    });
+    btn.textContent = `🔒 ODBLOKUJ [ZA ${PHOTO_UNLOCK_COST} ŻETONÓW]`;
+    btn.addEventListener('click', () => tryUnlockPhoto(wrap, profileId, photoIndex));
     overlay.appendChild(btn);
     photoWrap.appendChild(overlay);
   }
@@ -248,41 +326,39 @@ function appendPhotoBubble(src, blurred) {
   scrollToBottom();
 }
 
-function stripPhotoTag(text) {
-  return text.replace(/\s*\[SEND_PHOTO\]\s*/gi, '').trim();
-}
-
-function hasPhotoTag(text) {
-  return /\[SEND_PHOTO\]/i.test(text);
+function countPhotosBeforeHistoryIndex(endIndex) {
+  let count = 0;
+  for (let i = 0; i <= endIndex && i < chatHistory.length; i += 1) {
+    if (chatHistory[i].role === 'assistant' && /\[SEND_PHOTO\]/i.test(chatHistory[i].content)) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 function renderHistoryMessages() {
   const box = document.getElementById('chat-messages');
   if (box) box.innerHTML = '';
 
-  chatHistory.forEach((msg) => {
+  chatHistory.forEach((msg, idx) => {
     if (msg.role === 'user') {
       appendTextBubble(msg.content, true);
     } else if (msg.role === 'assistant') {
-      const clean = stripPhotoTag(msg.content);
-      if (clean) appendTextBubble(clean, false);
+      const parsed = parseAssistantTags(msg.content);
+      if (parsed.text) appendTextBubble(parsed.text, false);
+      if (parsed.showPricing || parsed.showTopup) appendActionButtons(parsed);
+      if (parsed.sendPhoto) {
+        const photoIndex = countPhotosBeforeHistoryIndex(idx);
+        appendPhotoBubble(photoPath(kolezankaId, photoIndex), kolezankaId, photoIndex);
+      }
     }
   });
 }
 
 async function callOpenRouter(messages) {
-  if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === 'WKLEJE_TUTAJ') {
-    throw new Error('Brak klucza API OpenRouter w chat.js');
-  }
-
-  const res = await fetch(OPENROUTER_URL, {
+  const res = await fetch(CHAT_API_URL, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://braszkamc-dev.github.io',
-      'X-Title': 'WolneMastoKabaty',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MODEL, messages }),
   });
 
@@ -354,11 +430,10 @@ async function fetchWelcomeMessage() {
 function handlePhotoSend() {
   const count = getPhotoCount(kolezankaId);
   const photoIndex = Math.min(count + 1, 5);
-  appendPhotoBubble(photoPath(kolezankaId, photoIndex), count >= 1);
+  appendPhotoBubble(photoPath(kolezankaId, photoIndex), kolezankaId, photoIndex);
   incrementPhotoCount(kolezankaId);
 }
 
-/** Kolejka — każda odpowiedź bota osobno: kropki + czas zależny od długości tekstu */
 function enqueueBotReply(task) {
   replyQueue = replyQueue
     .then(() => task())
@@ -366,7 +441,7 @@ function enqueueBotReply(task) {
 }
 
 async function runBotReplyCycle() {
-  if (chatEnded) return;
+  if (chatPaused) return;
 
   const userMessageIndex = getFirstUnansweredUserIndex();
   if (userMessageIndex === -1) return;
@@ -375,20 +450,20 @@ async function runBotReplyCycle() {
 
   try {
     await waitRandomReactionDelay();
-    if (chatEnded) return;
+    if (chatPaused) return;
 
     setTyping(true);
 
     const reply = await apiPromise;
-    if (chatEnded) {
+    if (chatPaused) {
       setTyping(false);
       return;
     }
 
-    const preview = stripPhotoTag(reply) || reply;
+    const preview = stripAllTags(reply) || reply;
     await waitFullTypingDuration(preview);
 
-    if (chatEnded) {
+    if (chatPaused) {
       setTyping(false);
       return;
     }
@@ -397,7 +472,7 @@ async function runBotReplyCycle() {
     await processAssistantReply(reply);
   } catch (err) {
     const fallback = 'kurde cos nie poszlo, sprobuj jeszcze raz';
-    if (!chatEnded) {
+    if (!chatPaused) {
       if (!typingBubbleEl) setTyping(true);
       await waitFullTypingDuration(fallback);
       setTyping(false);
@@ -410,78 +485,216 @@ async function runBotReplyCycle() {
 }
 
 async function processAssistantReply(rawReply) {
-  const sendPhoto = hasPhotoTag(rawReply);
-  const cleanText = stripPhotoTag(rawReply);
+  const parsed = parseAssistantTags(rawReply);
 
   chatHistory.push({ role: 'assistant', content: rawReply });
   saveHistory();
 
-  if (cleanText) appendTextBubble(cleanText, false);
-  if (sendPhoto) handlePhotoSend();
+  if (parsed.text) appendTextBubble(parsed.text, false);
+  if (parsed.showPricing || parsed.showTopup) appendActionButtons(parsed);
+  if (parsed.sendPhoto) handlePhotoSend();
 }
 
 async function sendUserMessage(text) {
-  if (chatEnded || !text.trim()) return;
+  if (chatPaused || !text.trim()) return;
 
   appendTextBubble(text, true);
   chatHistory.push({ role: 'user', content: text });
   saveHistory();
 
-  const startKey = chatStartKey(kolezankaId);
-  if (!localStorage.getItem(startKey)) {
-    localStorage.setItem(startKey, String(Date.now()));
+  if (!getSessionEnd(kolezankaId)) {
+    setSessionEnd(kolezankaId, Date.now() + CHAT_DURATION_MS);
     startChatTimer();
   }
 
   enqueueBotReply(runBotReplyCycle);
 }
 
-function disableComposer() {
-  chatEnded = true;
+function disableComposer(message) {
+  chatPaused = true;
   const input = document.getElementById('chat-input');
   const send = document.getElementById('chat-send');
   if (input) {
     input.disabled = true;
-    input.placeholder = 'Rozmowa zakończona';
+    input.placeholder = message || 'Rozmowa wstrzymana';
   }
   if (send) send.disabled = true;
 }
 
-function showEndModal() {
-  disableComposer();
+function enableComposer() {
+  chatPaused = false;
+  const input = document.getElementById('chat-input');
+  const send = document.getElementById('chat-send');
+  if (input) {
+    input.disabled = false;
+    input.placeholder = 'Napisz wiadomość...';
+  }
+  if (send) send.disabled = false;
+}
 
-  const modal = document.getElementById('chat-end-modal');
-  const text = document.getElementById('chat-end-text');
-  const affiliate = document.getElementById('chat-end-affiliate');
+function showExtensionModal() {
+  disableComposer('Czas minął — przedłuż rozmowę');
+
+  const modal = document.getElementById('chat-extension-modal');
+  const text = document.getElementById('chat-extension-text');
+  const balanceEl = document.getElementById('chat-extension-balance');
 
   if (text && kolezanka) {
-    text.textContent = `Aby kontynuować rozmowę z ${kolezanka.imie}, przejdź do jej strony`;
+    text.textContent = `Czas rozmowy z ${kolezanka.imie} minął. Przedłuż o 10 minut za ${EXTENSION_COST} żetonów.`;
   }
-  if (affiliate && kolezanka) {
-    affiliate.textContent = `PRZEJDŹ DO ${kolezanka.imie.toUpperCase()}`;
-    affiliate.href = '#';
+  if (balanceEl && typeof getTokenBalance === 'function') {
+    balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
   }
 
   if (modal) {
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
   }
+}
 
-  addTalkedTo(kolezankaId);
-  localStorage.setItem(COOLDOWN_KEY, String(Date.now() + COOLDOWN_MS));
-  localStorage.removeItem(historyKey(kolezankaId));
-  localStorage.removeItem(photoCountKey(kolezankaId));
-  localStorage.removeItem(chatStartKey(kolezankaId));
+function hideExtensionModal() {
+  const modal = document.getElementById('chat-extension-modal');
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function extendChatSession() {
+  const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+  if (balance < EXTENSION_COST) {
+    if (typeof showToast === 'function') {
+      showToast(`Potrzebujesz ${EXTENSION_COST} żetonów. Doładuj konto.`);
+    }
+    openTopupModal();
+    return;
+  }
+
+  if (typeof setTokenBalance === 'function') {
+    setTokenBalance(balance - EXTENSION_COST);
+  }
+
+  setSessionEnd(kolezankaId, Date.now() + EXTENSION_MS);
+  hideExtensionModal();
+  enableComposer();
+  startChatTimer();
+
+  if (typeof showToast === 'function') {
+    showToast('Rozmowa przedłużona o 10 minut!');
+  }
+}
+
+function onSessionExpired() {
+  showExtensionModal();
 }
 
 function startChatTimer() {
   if (timerHandle) clearTimeout(timerHandle);
 
-  const startTime = parseInt(localStorage.getItem(chatStartKey(kolezankaId)), 10);
-  if (!Number.isFinite(startTime)) return;
+  const endTime = getSessionEnd(kolezankaId);
+  if (!Number.isFinite(endTime)) return;
 
-  const remaining = Math.max(0, CHAT_DURATION_MS - (Date.now() - startTime));
-  timerHandle = setTimeout(showEndModal, remaining);
+  const remaining = Math.max(0, endTime - Date.now());
+  if (remaining <= 0) {
+    onSessionExpired();
+    return;
+  }
+
+  timerHandle = setTimeout(onSessionExpired, remaining);
+}
+
+function openChatPricingModal() {
+  const modal = document.getElementById('chat-pricing-modal');
+  const balanceEl = document.getElementById('chat-pricing-balance');
+  const shop = document.getElementById('chat-pricing-shop');
+
+  if (balanceEl && typeof getTokenBalance === 'function') {
+    balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
+  }
+
+  if (shop && typeof PRICING_SHOP_ITEMS !== 'undefined') {
+    const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+    shop.innerHTML = PRICING_SHOP_ITEMS.map(
+      (item) => `
+      <button type="button" class="pricing-shop-item" data-shop-id="${item.id}" ${balance < item.cost ? 'disabled' : ''}>
+        <span>
+          <span class="pricing-shop-item__name">${item.name}</span>
+          <span class="pricing-shop-item__desc">${item.desc}</span>
+        </span>
+        <span class="pricing-shop-item__cost"><span>${item.cost}</span> żetonów</span>
+      </button>
+    `
+    ).join('');
+
+    shop.querySelectorAll('.pricing-shop-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = PRICING_SHOP_ITEMS.find((i) => i.id === btn.dataset.shopId);
+        if (!item) return;
+        const bal = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+        if (bal < item.cost) {
+          if (typeof showToast === 'function') showToast('Za mało żetonów.');
+          openTopupModal();
+          return;
+        }
+        if (typeof setTokenBalance === 'function') setTokenBalance(bal - item.cost);
+        if (typeof showToast === 'function') showToast(`Kupiono: ${item.name}`);
+        closeChatPricingModal();
+      });
+    });
+  }
+
+  if (modal) {
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeChatPricingModal() {
+  const modal = document.getElementById('chat-pricing-modal');
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function openTopupModal() {
+  const modal = document.getElementById('chat-topup-modal');
+  if (modal) {
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeTopupModal() {
+  const modal = document.getElementById('chat-topup-modal');
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function bindModals() {
+  document.getElementById('chat-extension-extend')?.addEventListener('click', extendChatSession);
+  document.getElementById('chat-extension-topup')?.addEventListener('click', () => {
+    hideExtensionModal();
+    openTopupModal();
+  });
+  document.getElementById('chat-extension-close')?.addEventListener('click', hideExtensionModal);
+
+  document.getElementById('chat-pricing-close')?.addEventListener('click', closeChatPricingModal);
+  document.getElementById('chat-pricing-backdrop')?.addEventListener('click', closeChatPricingModal);
+
+  document.getElementById('chat-topup-close')?.addEventListener('click', closeTopupModal);
+  document.getElementById('chat-topup-backdrop')?.addEventListener('click', closeTopupModal);
+
+  const cryptoBtn = document.getElementById('chat-topup-crypto');
+  const discordBtn = document.getElementById('chat-topup-discord');
+  if (cryptoBtn) {
+    cryptoBtn.href = typeof TOPUP_CRYPTO_URL !== 'undefined' ? TOPUP_CRYPTO_URL : '#';
+  }
+  if (discordBtn) {
+    discordBtn.href = typeof TOPUP_DISCORD_URL !== 'undefined' ? TOPUP_DISCORD_URL : '#';
+  }
 }
 
 function bindComposer() {
@@ -489,7 +702,7 @@ function bindComposer() {
   const send = document.getElementById('chat-send');
 
   const doSend = () => {
-    if (!input || chatEnded) return;
+    if (!input || chatPaused) return;
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
@@ -538,12 +751,21 @@ async function initAiChat() {
 
   setupHeader();
   bindComposer();
+  bindModals();
+
+  if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
 
   chatHistory = loadHistory(kolezankaId);
 
   if (chatHistory.length > 0) {
     renderHistoryMessages();
-    if (localStorage.getItem(chatStartKey(kolezankaId))) startChatTimer();
+    if (getSessionEnd(kolezankaId)) {
+      if (isSessionExpired()) {
+        showExtensionModal();
+      } else {
+        startChatTimer();
+      }
+    }
   } else {
     await fetchWelcomeMessage();
   }

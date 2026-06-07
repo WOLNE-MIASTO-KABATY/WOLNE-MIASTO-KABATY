@@ -21,6 +21,10 @@ const TOKEN_PACKAGES = [
   { id: 'pack-300', tokens: 300, bonusTokens: 50, price: '79,99 zł', popular: false, bonus: '+50 żetonów gratis' },
 ];
 
+/** Linki doładowania żetonów — podmień po integracji płatności */
+const TOPUP_CRYPTO_URL = '#';
+const TOPUP_DISCORD_URL = '#';
+
 const DISC_GRID_PHOTOS = [
   'images/discs/disc-1.png',
   'images/discs/disc-2.png',
@@ -213,27 +217,33 @@ function bindAttachButton(button) {
   });
 }
 
-const profiles = [
-  { id: 1, name: 'Natalia', age: 20, city: 'WARSZAWA', bio: 'Studia, wino i ironia - mój zestaw', image: 'images/kolezanki/1/avatar.jpg' },
-  { id: 2, name: 'Wika', age: 19, city: 'KRAKÓW', bio: 'Po nockach w szpitalu trudno zasnąć ✨', image: 'images/kolezanki/2/avatar.jpg' },
-  { id: 3, name: 'Monika', age: 18, city: 'WROCŁAW', bio: 'Sztuka, tatuaże, dziwne nocki 🎨', image: 'images/kolezanki/3/avatar.jpg' },
-  { id: 4, name: 'Weronika', age: 19, city: 'WARSZAWA', bio: 'Wymagająca. Postaraj się.', image: 'images/kolezanki/4/avatar.jpg' },
-  { id: 5, name: 'Oliwia', age: 19, city: 'WARSZAWA', bio: 'Życie to impreza, dołącz jeśli nadążysz', image: 'images/kolezanki/5/avatar.jpg' },
-  { id: 6, name: 'Karolina', age: 20, city: 'GDAŃSK', bio: 'DJ-ka. Bez filtra, bez ściemy.', image: 'images/kolezanki/6/avatar.jpg' },
-  { id: 7, name: 'Zuzia', age: 18, city: 'POZNAŃ', bio: 'Barmanka, studentka, lubię flirt ✨', image: 'images/kolezanki/7/avatar.jpg' },
-  { id: 8, name: 'Ala', age: 20, city: 'ŁÓDŹ', bio: 'Pisze poezje o północy, wino i ty', image: 'images/kolezanki/8/avatar.jpg' },
-  { id: 9, name: 'Maja', age: 19, city: 'SOPOT', bio: 'Książki, plaża, głębokie rozmowy', image: 'images/kolezanki/9/avatar.jpg' },
-  { id: 10, name: 'Dominika', age: 20, city: 'KRAKÓW', bio: 'Joga, mindfulness, open mind 🧘', image: 'images/kolezanki/10/avatar.jpg' },
-];
+let profiles = [];
 
-/** Uzupełnia status dostępności (zielona / czerwona flara) */
-const PROFILE_AVAILABLE_IDS = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+function mapKolezankaToProfile(entry) {
+  return {
+    id: entry.id,
+    name: entry.imie,
+    age: entry.wiek,
+    city: entry.miasto,
+    bio: entry.bio,
+    image: `images/kolezanki/${entry.id}/avatar.jpg`,
+    available: entry.status === 'online',
+    aktywnosci: entry.aktywnosci ?? 0,
+  };
+}
 
-profiles.forEach((p) => {
-  if (p.available === undefined) {
-    p.available = PROFILE_AVAILABLE_IDS.has(p.id);
+async function loadProfiles() {
+  try {
+    const res = await fetch('data/kolezanki.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) throw new Error('empty');
+    profiles = data.map(mapKolezankaToProfile);
+  } catch (err) {
+    console.error('Nie udało się wczytać data/kolezanki.json', err);
+    profiles = [];
   }
-});
+}
 
 /** Tasuje kolejność kart i listy w skrzynce (Fisher–Yates) */
 function shuffleProfiles() {
@@ -429,10 +439,6 @@ function formatProfileChatCountdown(ms) {
 }
 
 function getProfileChatButtonHtml(profileId) {
-  const talkedTo = getChatTalkedTo();
-  if (talkedTo.includes(profileId)) {
-    return '<span class="profile-card__btn profile-card__btn--ended" aria-disabled="true">Zakończona</span>';
-  }
   if (isProfileChatCooldownActive()) {
     const remaining = getChatCooldownUntil() - Date.now();
     return `<span class="profile-card__btn profile-card__btn--cooldown" data-cooldown-profile="${profileId}">Dostępna za ${formatProfileChatCountdown(remaining)}</span>`;
@@ -1828,7 +1834,7 @@ function renderTopProfiles() {
         </div>
         <div class="rail-item__body">
           <span class="rail-item__name">${p.name}, ${p.age}</span>
-          <span class="rail-item__meta">${40 + i * 23} aktywności · ${p.city}</span>
+          <span class="rail-item__meta">${p.aktywnosci} aktywności · ${p.city}</span>
         </div>
         <button type="button" class="rail-item__msg" data-profile-id="${p.id}" aria-label="Wiadomości do ${p.name}">
           Wiadomości
@@ -2187,8 +2193,9 @@ function safeInit(fn) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   safeInit(captureReferralFromUrl);
+  await loadProfiles();
   safeInit(shuffleProfiles);
   safeInit(renderProfiles);
   safeInit(renderDiscCarousel);
