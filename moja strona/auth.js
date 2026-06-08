@@ -148,6 +148,9 @@
       if (/already registered/i.test(error.message)) {
         throw new Error('Ten e-mail jest już zarejestrowany.');
       }
+      if (/password/i.test(error.message) && /(short|least|characters|length)/i.test(error.message)) {
+        throw new Error('Hasło jest za krótkie — użyj dłuższego hasła.');
+      }
       throw new Error(error.message);
     }
 

@@ -312,7 +312,7 @@
       <header class="token-modal__header">
         <div>
           <h2 class="token-modal__title" id="auth-modal-title">Konto</h2>
-          <p class="token-modal__subtitle auth-modal__subtitle" id="auth-modal-subtitle">Login, e-mail i hasło — konto demo w przeglądarce.</p>
+          <p class="token-modal__subtitle auth-modal__subtitle" id="auth-modal-subtitle">Nazwa użytkownika (krótka), e-mail i hasło — załóż konto na DyskiHub.pl.</p>
         </div>
         <button type="button" class="token-modal__close" id="auth-modal-close" aria-label="Zamknij">&times;</button>
       </header>
@@ -322,14 +322,14 @@
       </div>
       <div class="auth-modal__body" id="auth-panel-register" role="tabpanel" aria-labelledby="auth-tab-register">
         <form class="register-form" id="register-form" novalidate>
-          <label class="register-form__label" for="reg-username">Login</label>
-          <input class="register-form__input" type="text" id="reg-username" name="username" placeholder="np. Jan_Kowalski" autocomplete="username" minlength="3" maxlength="24" required>
+          <label class="register-form__label" for="reg-username">Nazwa użytkownika</label>
+          <input class="register-form__input" type="text" id="reg-username" name="username" placeholder="np. wiktoria (krótka nazwa, nie e-mail)" autocomplete="username" maxlength="32" required>
           <label class="register-form__label" for="reg-email">E-mail</label>
-          <input class="register-form__input" type="email" id="reg-email" name="email" placeholder="twoj@email.pl" autocomplete="email" required>
+          <input class="register-form__input" type="email" id="reg-email" name="email" placeholder="twoj@email.pl" autocomplete="email" maxlength="254" required>
           <label class="register-form__label" for="reg-password">Hasło</label>
-          <input class="register-form__input" type="password" id="reg-password" name="password" placeholder="Min. 6 znaków" autocomplete="new-password" minlength="6" required>
+          <input class="register-form__input" type="password" id="reg-password" name="password" placeholder="Hasło" autocomplete="new-password" required>
           <label class="register-form__label" for="reg-password-confirm">Powtórz hasło</label>
-          <input class="register-form__input" type="password" id="reg-password-confirm" name="passwordConfirm" placeholder="Ponownie" autocomplete="new-password" minlength="6" required>
+          <input class="register-form__input" type="password" id="reg-password-confirm" name="passwordConfirm" placeholder="Ponownie" autocomplete="new-password" required>
           <p class="register-form__error" id="register-error" hidden></p>
           <button type="submit" class="btn btn--primary btn--full">Utwórz konto</button>
         </form>
@@ -339,7 +339,7 @@
           <label class="register-form__label" for="login-identifier">Login lub e-mail</label>
           <input class="register-form__input" type="text" id="login-identifier" name="identifier" placeholder="np. Jan_Kowalski" autocomplete="username" required>
           <label class="register-form__label" for="login-password">Hasło</label>
-          <input class="register-form__input" type="password" id="login-password" name="password" placeholder="Twoje hasło" autocomplete="current-password" minlength="6" required>
+          <input class="register-form__input" type="password" id="login-password" name="password" placeholder="Twoje hasło" autocomplete="current-password" required>
           <p class="register-form__error" id="login-error" hidden></p>
           <button type="submit" class="btn btn--primary btn--full">Zaloguj się</button>
         </form>

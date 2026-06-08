@@ -12,7 +12,8 @@ const PENDING_REF_KEY = 'flirtmatch_pending_ref';
 const REFERRAL_TIERS = [1, 5, 15, 50];
 const DEFAULT_TOKENS = 25;
 
-const USERNAME_REGEX = /^[a-zA-Z0-9_\u00C0-\u024F]{3,24}$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9_.\-\u00C0-\u024F]{3,32}$/;
+const USERNAME_MAX_LEN = 32;
 
 const TOKEN_PACKAGES = [
   { id: 'pack-50', tokens: 50, bonusTokens: 0, price: '19,99 zł', popular: false },
@@ -1544,7 +1545,7 @@ function setAuthPanelMode(mode) {
   if (subtitle) {
     subtitle.textContent = isLogin
       ? 'Wpisz login lub e-mail oraz hasło.'
-      : 'Login, e-mail i hasło — załóż konto na DyskiHub.pl.';
+      : 'Nazwa użytkownika (krótka), e-mail i hasło — załóż konto na DyskiHub.pl.';
   }
 
   if (regPanel) regPanel.hidden = isLogin;
@@ -1561,6 +1562,11 @@ function setAuthPanelMode(mode) {
 
   showRegisterError('');
   showLoginError('');
+
+  if (!isLogin) {
+    const regUsername = document.getElementById('reg-username');
+    if (regUsername) delete regUsername.dataset.userEdited;
+  }
 }
 
 function updateRegisterUI() {
@@ -1683,7 +1689,7 @@ async function handleRegisterSubmit(e) {
   const passwordConfirm = document.getElementById('reg-password-confirm')?.value;
 
   if (!username || !USERNAME_REGEX.test(username)) {
-    showRegisterError('Login: 3–24 znaki (litery, cyfry, podkreślnik).');
+    showRegisterError('Nazwa użytkownika: 3–32 znaki (litery, cyfry, kropka, myślnik, podkreślnik). To nie jest pole e-mail.');
     return;
   }
 
@@ -1692,8 +1698,8 @@ async function handleRegisterSubmit(e) {
     return;
   }
 
-  if (!password || password.length < 6) {
-    showRegisterError('Hasło musi mieć co najmniej 6 znaków.');
+  if (!password) {
+    showRegisterError('Wpisz hasło.');
     return;
   }
 
@@ -1790,6 +1796,23 @@ function initRegister() {
   });
 
   form?.addEventListener('submit', handleRegisterSubmit);
+
+  const regEmail = document.getElementById('reg-email');
+  const regUsername = document.getElementById('reg-username');
+  if (regEmail && regUsername) {
+    regUsername.addEventListener('input', () => {
+      regUsername.dataset.userEdited = '1';
+    });
+    regEmail.addEventListener('input', () => {
+      if (regUsername.dataset.userEdited) return;
+      const local = regEmail.value.split('@')[0] || '';
+      const suggested = local
+        .replace(/[^a-zA-Z0-9_.\-\u00C0-\u024F]/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, USERNAME_MAX_LEN);
+      if (suggested.length >= 3) regUsername.value = suggested;
+    });
+  }
 }
 
 function setSidebarActiveLink(activeId) {
@@ -2388,7 +2411,7 @@ function buildEditFormFields(field) {
   if (field === 'username') {
     wrap.innerHTML = `
       <label class="register-form__label" for="edit-username">Nowa nazwa użytkownika</label>
-      <input class="register-form__input" type="text" id="edit-username" value="${escapeHtml(username)}" minlength="3" maxlength="24" required autocomplete="username">
+      <input class="register-form__input" type="text" id="edit-username" value="${escapeHtml(username)}" maxlength="32" required autocomplete="username">
     `;
     return;
   }
@@ -2406,9 +2429,9 @@ function buildEditFormFields(field) {
       <label class="register-form__label" for="edit-password-current">Aktualne hasło</label>
       <input class="register-form__input" type="password" id="edit-password-current" autocomplete="current-password" required>
       <label class="register-form__label" for="edit-password-new">Nowe hasło</label>
-      <input class="register-form__input" type="password" id="edit-password-new" minlength="6" autocomplete="new-password" required>
+      <input class="register-form__input" type="password" id="edit-password-new" autocomplete="new-password" required>
       <label class="register-form__label" for="edit-password-confirm">Powtórz nowe hasło</label>
-      <input class="register-form__input" type="password" id="edit-password-confirm" minlength="6" autocomplete="new-password" required>
+      <input class="register-form__input" type="password" id="edit-password-confirm" autocomplete="new-password" required>
     `;
   }
 }
@@ -2433,7 +2456,7 @@ function openEditModal(field) {
     password: 'Zmień hasło',
   };
   const subs = {
-    username: 'Wpisz nową nazwę użytkownika (3–24 znaki).',
+    username: 'Wpisz nową nazwę użytkownika (3–32 znaki).',
     email: 'Wpisz nowy adres e-mail powiązany z kontem.',
     password: 'Podaj aktualne hasło i ustaw nowe (min. 6 znaków).',
   };
@@ -2483,7 +2506,7 @@ async function handleEditSubmit(e) {
     if (editModalField === 'username') {
       const username = document.getElementById('edit-username')?.value.trim();
       if (!username || !USERNAME_REGEX.test(username)) {
-        showEditFormError('Login: 3–24 znaki (litery, cyfry, podkreślnik).');
+        showEditFormError('Nazwa: 3–32 znaki (litery, cyfry, kropka, myślnik, podkreślnik).');
         return;
       }
       if (useSupabase) {
@@ -2517,8 +2540,8 @@ async function handleEditSubmit(e) {
     if (editModalField === 'password') {
       const next = document.getElementById('edit-password-new')?.value;
       const confirm = document.getElementById('edit-password-confirm')?.value;
-      if (!next || next.length < 6) {
-        showEditFormError('Nowe hasło musi mieć co najmniej 6 znaków.');
+      if (!next) {
+        showEditFormError('Wpisz nowe hasło.');
         return;
       }
       if (next !== confirm) {
