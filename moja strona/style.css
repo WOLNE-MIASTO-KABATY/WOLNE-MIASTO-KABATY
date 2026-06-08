@@ -351,6 +351,15 @@ button {
   pointer-events: auto;
   opacity: 1;
   visibility: visible;
+  z-index: 6000;
+}
+
+#chat-topup-modal:not([hidden]) {
+  display: flex;
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  z-index: 6000;
 }
 
 .token-modal__backdrop {
@@ -5645,7 +5654,7 @@ button.profile-card__btn--chat {
 .end-modal {
   position: fixed;
   inset: 0;
-  z-index: 3500;
+  z-index: 6000;
   display: flex;
   align-items: center;
   justify-content: center;

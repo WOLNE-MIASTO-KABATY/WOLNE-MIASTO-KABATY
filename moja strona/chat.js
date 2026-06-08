@@ -548,14 +548,20 @@ function enableComposer() {
 }
 
 function showExtensionModal() {
-  disableComposer('Czas minął — przedłuż rozmowę');
+  disableComposer('Czas minął — doładuj żetony');
 
   const modal = document.getElementById('chat-extension-modal');
   const text = document.getElementById('chat-extension-text');
   const balanceEl = document.getElementById('chat-extension-balance');
+  const name = kolezanka?.imie || kolezanka?.name || 'koleżanką';
 
-  if (text && kolezanka) {
-    text.textContent = `Czas rozmowy z ${kolezanka.imie || kolezanka.name} minął. Przedłuż o 10 minut za ${EXTENSION_COST} żetonów.`;
+  if (text) {
+    const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+    if (balance >= EXTENSION_COST) {
+      text.textContent = `Czas rozmowy z ${name} minął. Masz wystarczająco żetonów — przedłuż czat o 10 minut za ${EXTENSION_COST} żetonów albo doładuj portfel na przyszłość.`;
+    } else {
+      text.textContent = `Czas rozmowy z ${name} minął. Aby kontynuować rozmowę, doładuj żetony — potrzebujesz ${EXTENSION_COST} żetonów na przedłużenie o 10 minut.`;
+    }
   }
   if (balanceEl && typeof getTokenBalance === 'function') {
     balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
@@ -564,6 +570,10 @@ function showExtensionModal() {
   if (modal) {
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
+  }
+
+  if (typeof showToast === 'function') {
+    showToast('Czas rozmowy minął — doładuj żetony, aby kontynuować czat.');
   }
 }
 
@@ -673,6 +683,11 @@ function closeChatPricingModal() {
 }
 
 function openTopupModal() {
+  if (typeof openTokenShop === 'function') {
+    openTokenShop();
+    return;
+  }
+
   const modal = document.getElementById('chat-topup-modal');
   if (modal) {
     modal.hidden = false;
@@ -695,6 +710,7 @@ function bindModals() {
     openTopupModal();
   });
   document.getElementById('chat-extension-close')?.addEventListener('click', hideExtensionModal);
+  document.querySelector('#chat-extension-modal .end-modal-overlay')?.addEventListener('click', hideExtensionModal);
 
   document.getElementById('chat-pricing-close')?.addEventListener('click', closeChatPricingModal);
   document.getElementById('chat-pricing-backdrop')?.addEventListener('click', closeChatPricingModal);
