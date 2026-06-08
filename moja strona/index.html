@@ -127,6 +127,7 @@
             <div class="profile-menu__dropdown" id="profile-menu-dropdown" hidden>
               <a href="konto.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-account">Konto</a>
               <a href="ustawienia.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-settings">Ustawienia</a>
+              <a href="admin.html" class="profile-menu__item profile-menu__item--link profile-menu__item--admin" id="profile-menu-admin" hidden>Panel admina</a>
               <button type="button" class="profile-menu__item profile-menu__item--logout" id="profile-menu-logout">Wyloguj</button>
             </div>
           </div>
@@ -517,6 +518,8 @@
 
   <div class="chat-container" id="chat-container" aria-live="polite"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
   <script src="data/prompts.js"></script>
   <script src="script.js"></script>
   <script src="chat.js"></script>

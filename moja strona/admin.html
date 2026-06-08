@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel administratora — DyskiHub.pl</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-admin">
+  <div class="admin-page">
+    <header class="admin-page__header">
+      <div>
+        <h1 class="admin-page__title">Panel administratora</h1>
+        <p class="admin-page__subtitle" id="admin-subtitle">Ładowanie…</p>
+      </div>
+      <div class="admin-page__actions">
+        <a href="index.html" class="btn btn--ghost">← Strona główna</a>
+        <button type="button" class="btn btn--ghost" id="admin-logout">Wyloguj</button>
+      </div>
+    </header>
+
+    <section class="admin-stats" id="admin-stats" hidden>
+      <div class="admin-stat">
+        <span class="admin-stat__value" id="stat-users">0</span>
+        <span class="admin-stat__label">Użytkowników</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat__value" id="stat-tokens">0</span>
+        <span class="admin-stat__label">Żetonów łącznie</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat__value" id="stat-today">0</span>
+        <span class="admin-stat__label">Rejestracje dziś</span>
+      </div>
+      <div class="admin-stat">
+        <span class="admin-stat__value" id="stat-week">0</span>
+        <span class="admin-stat__label">Rejestracje (7 dni)</span>
+      </div>
+    </section>
+
+    <section class="admin-panel">
+      <div class="admin-panel__toolbar">
+        <input type="search" class="admin-search" id="admin-search" placeholder="Szukaj po loginie lub e-mailu…" autocomplete="off">
+        <button type="button" class="btn btn--primary" id="admin-search-btn">Szukaj</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Login</th>
+              <th>E-mail</th>
+              <th>Żetony</th>
+              <th>Rejestracja</th>
+              <th>Status</th>
+              <th>Akcja</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-body">
+            <tr><td colspan="6" class="admin-table__empty">Ładowanie użytkowników…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="admin-panel admin-panel--grant" id="admin-grant-panel" hidden>
+      <h2 class="admin-panel__heading">Nadaj żetony</h2>
+      <p class="admin-panel__hint">Wybrany użytkownik: <strong id="grant-target-name">—</strong></p>
+      <div class="admin-grant-form">
+        <input type="number" class="admin-grant-input" id="grant-amount" min="-100000" max="100000" step="1" placeholder="Ilość żetonów (+ dodaj, − odejmij)">
+        <button type="button" class="btn btn--primary" id="grant-submit">Zatwierdź</button>
+        <button type="button" class="btn btn--ghost" id="grant-cancel">Anuluj</button>
+      </div>
+      <p class="admin-panel__note">Wpisz dodatnią liczbę aby dodać, ujemną aby odjąć żetony.</p>
+    </section>
+
+    <section class="admin-panel" id="admin-audit-panel" hidden>
+      <h2 class="admin-panel__heading">Ostatnie akcje admina</h2>
+      <ul class="admin-audit" id="admin-audit-list"></ul>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

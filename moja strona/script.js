@@ -7,7 +7,6 @@ const MAX_OPEN_CHATS = 3;
 const TOKEN_STORAGE_KEY = 'flirtmatch_tokens';
 const SIDEBAR_COLLAPSED_KEY = 'flirtmatch_sidebar_collapsed';
 const USERS_STORAGE_KEY = 'flirtmatch_users';
-const CURRENT_USER_KEY = 'flirtmatch_current_user';
 const REFERRAL_STATS_KEY = 'flirtmatch_referral_stats';
 const PENDING_REF_KEY = 'flirtmatch_pending_ref';
 const REFERRAL_TIERS = [1, 5, 15, 50];
@@ -569,12 +568,6 @@ function attributeReferralOnRegister(newUser) {
   const referrer = pendingRef.toLowerCase();
   if (referrer === newUser.username.toLowerCase()) return;
 
-  const referrerExists = getStoredUsers().some(
-    (u) => u.username.toLowerCase() === referrer
-  );
-  if (!referrerExists) return;
-
-  newUser.referredBy = referrer;
   incrementReferralSignup(referrer);
 }
 
@@ -798,17 +791,31 @@ function closeChat(profileId) {
 }
 
 function getTokenBalance() {
-  const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
-  if (stored === null) return DEFAULT_TOKENS;
-  const n = parseInt(stored, 10);
-  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_TOKENS;
+  if (window.DyskiAuth?.getCurrentUser()) {
+    return window.DyskiAuth.getTokenBalanceSync();
+  }
+  return 0;
 }
 
 function setTokenBalance(amount) {
   const value = Math.max(0, Math.floor(amount));
-  localStorage.setItem(TOKEN_STORAGE_KEY, String(value));
-  updateTokenUI(value);
-  return value;
+  const user = window.DyskiAuth?.getCurrentUser();
+
+  if (user) {
+    const current = window.DyskiAuth.getTokenBalanceSync();
+    const delta = value - current;
+    if (delta < 0) {
+      const spend = -delta;
+      window.DyskiAuth.spendTokens(spend).catch((err) => {
+        showToast(err.message || 'Błąd aktualizacji żetonów');
+        window.DyskiAuth.loadProfile();
+      });
+      return Math.max(0, current - spend);
+    }
+    return current;
+  }
+
+  return 0;
 }
 
 function updateTokenUI(balance) {
@@ -831,16 +838,27 @@ function showToast(message) {
   showToast._timer = setTimeout(() => toast.classList.remove('is-visible'), 3200);
 }
 
-function purchaseTokenPack(packId) {
+async function purchaseTokenPack(packId) {
   const pack = TOKEN_PACKAGES.find((p) => p.id === packId);
   if (!pack) return;
 
+  if (!window.DyskiAuth?.getCurrentUser()) {
+    showToast('Zaloguj się, aby doładować żetony.');
+    openAuthModal('login');
+    return;
+  }
+
   const tokens = pack.tokens + (pack.bonusTokens || 0);
-  const newBalance = setTokenBalance(getTokenBalance() + tokens);
   const label = pack.bonus ? `${pack.tokens} + ${pack.bonusTokens} bonus` : String(tokens);
-  updateInboxPricingBalance();
-  renderInboxPricingShop();
-  showToast(`Dodano ${label} żetonów. Stan konta: ${newBalance}`);
+
+  try {
+    const result = await window.DyskiAuth.purchasePack(packId);
+    updateInboxPricingBalance();
+    renderInboxPricingShop();
+    showToast(`Dodano ${label} żetonów. Stan konta: ${result.newTokens}`);
+  } catch (err) {
+    showToast(err.message || 'Nie udało się doładować żetonów');
+  }
 }
 
 function buildDiscCardHtml(item, extraClass = '') {
@@ -1399,9 +1417,9 @@ function initProfileMenu() {
   });
 
 
-  document.getElementById('profile-menu-logout')?.addEventListener('click', () => {
+  document.getElementById('profile-menu-logout')?.addEventListener('click', async () => {
     closeProfileMenu();
-    setCurrentUser(null);
+    if (window.DyskiAuth) await window.DyskiAuth.signOut();
     setAuthPanelMode('register');
     updateRegisterUI();
     showToast('Wylogowano.');
@@ -1469,31 +1487,6 @@ function getStoredUsers() {
   }
 }
 
-function getCurrentUser() {
-  try {
-    const raw = localStorage.getItem(CURRENT_USER_KEY);
-    if (!raw) return null;
-    const user = JSON.parse(raw);
-    if (!user || typeof user !== 'object') return null;
-    const username = typeof user.username === 'string' ? user.username.trim() : '';
-    if (!username) return null;
-    return {
-      username,
-      email: typeof user.email === 'string' ? user.email.trim() : '',
-    };
-  } catch {
-    return null;
-  }
-}
-
-function setCurrentUser(user) {
-  if (!user) {
-    localStorage.removeItem(CURRENT_USER_KEY);
-    return;
-  }
-  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-}
-
 function closeAuthModal() {
   const modal = document.getElementById('auth-modal');
   const toggle = document.getElementById('register-toggle');
@@ -1551,7 +1544,7 @@ function setAuthPanelMode(mode) {
   if (subtitle) {
     subtitle.textContent = isLogin
       ? 'Wpisz login lub e-mail oraz hasło.'
-      : 'Login, e-mail i hasło — konto demo w przeglądarce.';
+      : 'Login, e-mail i hasło — załóż konto na DyskiHub.pl.';
   }
 
   if (regPanel) regPanel.hidden = isLogin;
@@ -1591,14 +1584,18 @@ function updateRegisterUI() {
   const inviteBtn = document.getElementById('invite-friend');
   const inviteHint = document.getElementById('invite-hint');
 
+  const adminLink = document.getElementById('profile-menu-admin');
+
   if (user) {
     toggle.hidden = true;
     closeAuthModal();
     if (inviteHint) inviteHint.hidden = false;
     if (inviteBtn) inviteBtn.hidden = false;
+    if (adminLink) adminLink.hidden = !window.DyskiAuth?.isAdminSession();
     const inviteInput = document.getElementById('invite-link-input');
     if (inviteInput) inviteInput.value = getInviteReferralLink();
   } else {
+    if (adminLink) adminLink.hidden = true;
     toggle.hidden = false;
     toggle.textContent = 'Dołącz za darmo →';
     if (inviteHint) inviteHint.hidden = true;
@@ -1640,7 +1637,7 @@ function showLoginError(message) {
   }
 }
 
-function handleLoginSubmit(e) {
+async function handleLoginSubmit(e) {
   e.preventDefault();
   showLoginError('');
 
@@ -1652,27 +1649,31 @@ function handleLoginSubmit(e) {
     return;
   }
 
-  const idLower = identifier.toLowerCase();
-  const users = getStoredUsers();
-  const user = users.find(
-    (u) => u.username.toLowerCase() === idLower || u.email === idLower
-  );
-
-  if (!user || user.password !== password) {
-    showLoginError('Nieprawidłowy login lub hasło.');
+  if (!window.DyskiAuth) {
+    showLoginError('Logowanie niedostępne — brak połączenia z serwerem.');
     return;
   }
 
-  setCurrentUser({ username: user.username, email: user.email });
-  e.target.reset();
-  setAuthPanelMode('register');
-  updateRegisterUI();
-  showToast(`Witaj ponownie, ${user.username}!`);
-  closeRegisterPanel();
-  closeSidebarMenu();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    await window.DyskiAuth.signIn({ identifier, password });
+    const user = getCurrentUser();
+    e.target.reset();
+    setAuthPanelMode('register');
+    updateRegisterUI();
+    showToast(`Witaj ponownie, ${user?.username || ''}!`);
+    closeRegisterPanel();
+    closeSidebarMenu();
+  } catch (err) {
+    showLoginError(err.message || 'Nieprawidłowy login lub hasło.');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
 }
 
-function handleRegisterSubmit(e) {
+async function handleRegisterSubmit(e) {
   e.preventDefault();
   showRegisterError('');
 
@@ -1701,36 +1702,43 @@ function handleRegisterSubmit(e) {
     return;
   }
 
-  const users = getStoredUsers();
-  if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
-    showRegisterError('Ten login jest już zajęty — wybierz inną nazwę.');
+  if (!window.DyskiAuth) {
+    showRegisterError('Rejestracja niedostępna — brak połączenia z serwerem.');
     return;
   }
 
-  if (users.some((u) => u.email === email)) {
-    showRegisterError('Ten e-mail jest już zarejestrowany.');
-    return;
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  try {
+    const pendingRef = sessionStorage.getItem(PENDING_REF_KEY) || null;
+    const result = await window.DyskiAuth.signUp({
+      username,
+      email,
+      password,
+      referredBy: pendingRef,
+    });
+
+    if (pendingRef) {
+      attributeReferralOnRegister({ username, email, referredBy: pendingRef });
+    }
+
+    if (!result.session) {
+      showRegisterError('Konto utworzone. Sprawdź e-mail i potwierdź rejestrację, potem się zaloguj.');
+      setAuthPanelMode('login');
+      return;
+    }
+
+    e.target.reset();
+    updateRegisterUI();
+    showToast(`Witaj, ${username}! Konto zostało utworzone.`);
+    closeRegisterPanel();
+    closeSidebarMenu();
+  } catch (err) {
+    showRegisterError(err.message || 'Nie udało się utworzyć konta.');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
-
-  const newUser = {
-    username,
-    email,
-    password,
-    createdAt: new Date().toISOString(),
-  };
-
-  attributeReferralOnRegister(newUser);
-
-  users.push(newUser);
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  setCurrentUser({ username, email });
-
-  e.target.reset();
-  updateRegisterUI();
-  showToast(`Witaj, ${username}! Konto zostało utworzone.`);
-  closeRegisterPanel();
-
-  closeSidebarMenu();
 }
 
 function closeSidebarMenu() {
@@ -2247,6 +2255,15 @@ function safeInit(fn) {
 document.addEventListener('DOMContentLoaded', async () => {
   safeInit(migrateChatStorageV2);
   safeInit(captureReferralFromUrl);
+
+  if (window.DyskiAuth) {
+    try {
+      await window.DyskiAuth.initAuth();
+    } catch (err) {
+      console.error('Auth init failed', err);
+    }
+  }
+
   await loadProfiles();
   safeInit(shuffleProfiles);
   safeInit(renderProfiles);
@@ -2282,6 +2299,13 @@ function maskEmail(email) {
 function getUserRecord() {
   const current = getCurrentUser();
   if (!current) return null;
+  if (current.id) {
+    return {
+      username: current.username,
+      email: current.email,
+      id: current.id,
+    };
+  }
   const users = getStoredUsers();
   let found = users.find((u) => u.username.toLowerCase() === current.username.toLowerCase());
   if (found) return found;
@@ -2299,15 +2323,6 @@ function getEditFormDefaults() {
     username: record?.username || current?.username || '',
     email: record?.email || current?.email || '',
   };
-}
-
-function saveUsersArray(users) {
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-}
-
-function syncCurrentUserFromRecord(record) {
-  if (!record) return;
-  setCurrentUser({ username: record.username, email: record.email });
 }
 
 function refreshAccountSettingsView() {
@@ -2452,7 +2467,7 @@ function closeEditModal() {
   }
 }
 
-function handleEditSubmit(e) {
+async function handleEditSubmit(e) {
   e.preventDefault();
   showEditFormError('');
 
@@ -2462,70 +2477,67 @@ function handleEditSubmit(e) {
     return;
   }
 
-  const users = getStoredUsers();
-  const idx = users.findIndex((u) => u.username.toLowerCase() === user.username.toLowerCase());
-  if (idx === -1) {
-    showEditFormError('Nie znaleziono konta. Zaloguj się ponownie.');
-    return;
-  }
+  const useSupabase = Boolean(user.id && window.DyskiAuth);
 
-  if (editModalField === 'username') {
-    const username = document.getElementById('edit-username')?.value.trim();
-    if (!username || !USERNAME_REGEX.test(username)) {
-      showEditFormError('Login: 3–24 znaki (litery, cyfry, podkreślnik).');
-      return;
+  try {
+    if (editModalField === 'username') {
+      const username = document.getElementById('edit-username')?.value.trim();
+      if (!username || !USERNAME_REGEX.test(username)) {
+        showEditFormError('Login: 3–24 znaki (litery, cyfry, podkreślnik).');
+        return;
+      }
+      if (useSupabase) {
+        await window.DyskiAuth.updateUsername(username);
+      } else {
+        showEditFormError('Zaloguj się ponownie, aby zmienić nazwę.');
+        return;
+      }
+      refreshAccountSettingsView();
+      updateRegisterUI();
+      showToast('Nazwa użytkownika została zmieniona.');
     }
-    if (users.some((u, i) => i !== idx && u.username.toLowerCase() === username.toLowerCase())) {
-      showEditFormError('Ten login jest już zajęty.');
-      return;
-    }
-    users[idx].username = username;
-    saveUsersArray(users);
-    syncCurrentUserFromRecord(users[idx]);
-    refreshAccountSettingsView();
-    showToast('Nazwa użytkownika została zmieniona.');
-  }
 
-  if (editModalField === 'email') {
-    const email = document.getElementById('edit-email')?.value.trim().toLowerCase();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showEditFormError('Podaj prawidłowy adres e-mail.');
-      return;
+    if (editModalField === 'email') {
+      const email = document.getElementById('edit-email')?.value.trim().toLowerCase();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showEditFormError('Podaj prawidłowy adres e-mail.');
+        return;
+      }
+      if (useSupabase) {
+        await window.DyskiAuth.updateEmail(email);
+      } else {
+        showEditFormError('Zaloguj się ponownie, aby zmienić e-mail.');
+        return;
+      }
+      settingsEmailRevealed = false;
+      refreshAccountSettingsView();
+      showToast('Adres e-mail został zmieniony.');
     }
-    if (users.some((u, i) => i !== idx && u.email === email)) {
-      showEditFormError('Ten e-mail jest już zarejestrowany.');
-      return;
-    }
-    users[idx].email = email;
-    saveUsersArray(users);
-    syncCurrentUserFromRecord(users[idx]);
-    settingsEmailRevealed = false;
-    refreshAccountSettingsView();
-    showToast('Adres e-mail został zmieniony.');
-  }
 
-  if (editModalField === 'password') {
-    const current = document.getElementById('edit-password-current')?.value;
-    const next = document.getElementById('edit-password-new')?.value;
-    const confirm = document.getElementById('edit-password-confirm')?.value;
-    if (current !== users[idx].password) {
-      showEditFormError('Aktualne hasło jest nieprawidłowe.');
-      return;
+    if (editModalField === 'password') {
+      const next = document.getElementById('edit-password-new')?.value;
+      const confirm = document.getElementById('edit-password-confirm')?.value;
+      if (!next || next.length < 6) {
+        showEditFormError('Nowe hasło musi mieć co najmniej 6 znaków.');
+        return;
+      }
+      if (next !== confirm) {
+        showEditFormError('Nowe hasła nie są identyczne.');
+        return;
+      }
+      if (useSupabase) {
+        await window.DyskiAuth.updatePassword(next);
+      } else {
+        showEditFormError('Zaloguj się ponownie, aby zmienić hasło.');
+        return;
+      }
+      showToast('Hasło zostało zmienione.');
     }
-    if (!next || next.length < 6) {
-      showEditFormError('Nowe hasło musi mieć co najmniej 6 znaków.');
-      return;
-    }
-    if (next !== confirm) {
-      showEditFormError('Nowe hasła nie są identyczne.');
-      return;
-    }
-    users[idx].password = next;
-    saveUsersArray(users);
-    showToast('Hasło zostało zmienione.');
-  }
 
-  closeEditModal();
+    closeEditModal();
+  } catch (err) {
+    showEditFormError(err.message || 'Nie udało się zapisać zmian.');
+  }
 }
 
 function initAccountSettingsPage() {
@@ -2563,17 +2575,10 @@ function initAccountSettingsPage() {
     showToast('Wyłączenie konta — funkcja demo (konto pozostaje aktywne).');
   });
 
-  document.getElementById('settings-delete-account')?.addEventListener('click', () => {
+  document.getElementById('settings-delete-account')?.addEventListener('click', async () => {
     if (!confirm('Na pewno chcesz trwale usunąć konto? Tej operacji nie można cofnąć.')) return;
-    const user = getUserRecord();
-    if (!user) return;
-    const users = getStoredUsers().filter(
-      (u) => u.username.toLowerCase() !== user.username.toLowerCase()
-    );
-    saveUsersArray(users);
-    setCurrentUser(null);
-    showToast('Konto zostało usunięte.');
-    window.location.href = 'index.html';
+    if (!getCurrentUser()) return;
+    showToast('Usuwanie konta — skontaktuj się z administratorem (funkcja w przygotowaniu).');
   });
 }
 
