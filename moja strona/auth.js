@@ -86,10 +86,17 @@
     };
   }
 
+  const ADMIN_EMAILS = [
+    'marcelkuczynski47@gmail.com',
+    'braszkamc@gmail.com',
+  ];
+
   function isAdminSession() {
     const user = getCurrentUser();
     if (!user) return false;
-    return Boolean(user.is_admin);
+    if (user.is_admin) return true;
+    const email = (user.email || '').toLowerCase();
+    return ADMIN_EMAILS.includes(email);
   }
 
   async function loadProfile() {

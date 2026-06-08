@@ -1597,11 +1597,18 @@ function updateRegisterUI() {
     closeAuthModal();
     if (inviteHint) inviteHint.hidden = false;
     if (inviteBtn) inviteBtn.hidden = false;
-    if (adminLink) adminLink.hidden = !window.DyskiAuth?.isAdminSession();
+    if (adminLink) {
+      const isAdmin = Boolean(window.DyskiAuth?.isAdminSession());
+      adminLink.hidden = !isAdmin;
+      adminLink.style.display = isAdmin ? '' : 'none';
+    }
     const inviteInput = document.getElementById('invite-link-input');
     if (inviteInput) inviteInput.value = getInviteReferralLink();
   } else {
-    if (adminLink) adminLink.hidden = true;
+    if (adminLink) {
+      adminLink.hidden = true;
+      adminLink.style.display = 'none';
+    }
     toggle.hidden = false;
     toggle.textContent = 'Dołącz za darmo →';
     if (inviteHint) inviteHint.hidden = true;
@@ -2306,6 +2313,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit(initAccountSettingsPage);
   safeInit(initReferralPage);
   safeInit(initScrollAnimations);
+  updateRegisterUI();
 });
 
 let editModalField = null;

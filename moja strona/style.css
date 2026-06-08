@@ -5768,12 +5768,16 @@ button.profile-card__btn--chat {
 .page-admin {
   background: #0a1528;
   min-height: 100dvh;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-page {
   max-width: 1100px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-page__header {
@@ -5959,4 +5963,8 @@ button.profile-card__btn--chat {
 .profile-menu__item--admin {
   color: var(--blue-light);
   font-weight: 600;
+}
+
+#profile-menu-admin[hidden] {
+  display: none !important;
 }

@@ -35,14 +35,14 @@ async function guardAdmin() {
   const user = window.DyskiAuth.getCurrentUser();
 
   if (!user) {
-    window.location.href = 'index.html';
+    window.location.href = '/';
     return false;
   }
 
   if (!window.DyskiAuth.isAdminSession()) {
     showToast('Brak uprawnień administratora');
     setTimeout(() => {
-      window.location.href = 'index.html';
+      window.location.href = '/';
     }, 1500);
     return false;
   }
@@ -129,7 +129,7 @@ async function loadUsers(search = '') {
     tbody.innerHTML = `<tr><td colspan="6" class="admin-table__empty">${escapeHtml(err.message)}</td></tr>`;
     if (err.message.includes('uprawnień') || err.message.includes('autoryzacji')) {
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = '/';
       }, 2000);
     }
   }
@@ -186,6 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('admin-logout')?.addEventListener('click', async () => {
     await window.DyskiAuth.signOut();
-    window.location.href = 'index.html';
+    window.location.href = '/';
   });
 });
