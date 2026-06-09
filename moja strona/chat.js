@@ -14,12 +14,40 @@ const PHOTO_TAG = '[SEND_PHOTO]';
 const PRICING_TAG = '[SHOW_PRICING]';
 const TOPUP_TAG = '[SHOW_TOPUP]';
 
-const ROSE_THANKS_MESSAGES = [
-  'o dziekuje za rozyczke 🌹 to takie slodkie od ciebie',
-  'aww dziekuje serducho 🌹',
-  'jeej rozyczka 🌹 bardzo milo',
-  'dziekuje pieknie 🌹 uwielbiam takie gesty',
-  'o nie musiales ale dziekuje 🌹',
+const ROSE_THANKS_FALLBACKS = [
+  'o dziekuje za rozyczke to takie slodkie od ciebie',
+  'aww dziekuje serducho',
+  'jeej rozyczka bardzo milo',
+  'dziekuje pieknie uwielbiam takie gesty',
+  'o nie musiales ale dziekuje',
+  'hej dzieki za roze to milo',
+  'o super dziekuje jestes slodki',
+  'dzieki za prezent nie musiales',
+  'o rozyczka dziekuje ci serio',
+  'aww dziekuje to miliutkie',
+  'dzieki za roze zrobiło mi dzien lepszy',
+  'o dziekuje jestes zloty',
+  'rozyczka dziekuje to takie milo',
+  'dzieki serio nie musiales a',
+  'o dziekuje pieknie od ciebie',
+  'hej dzieki za roze xd milo',
+  'dziekuje ci to takie slodkie',
+  'o dzieki za roze jestes kochany',
+  'aw dziekuje za roze',
+  'dzieki za roze to milutkie',
+];
+
+const ROSE_THANKS_TONES = [
+  'zaskoczona i uradowana, naturalnie',
+  'słodko i trochę nieśmiało',
+  'z lekkim humorem, luźno',
+  'pewnie siebie, lekko flirtująco',
+  'ciepło i szczerze, bez przesady',
+  'jak w wiadomości do znajomego, krótko',
+  'z lekką ironią w swoim stylu',
+  'entuzjastycznie ale bez przesady',
+  'spokojnie i miło',
+  'zaskoczona pozytywnie, autentycznie',
 ];
 
 let kolezanka = null;
@@ -250,17 +278,69 @@ async function waitFullTypingDuration(text) {
   await sleep(estimateTypingDuration(text));
 }
 
+function isGiftUserMessage(msg) {
+  return msg?.role === 'user' && msg?.type === 'gift';
+}
+
 function isUserMessageAlreadyAnswered(userMessageIndex) {
   return chatHistory[userMessageIndex + 1]?.role === 'assistant';
 }
 
 function getFirstUnansweredUserIndex() {
   for (let i = 0; i < chatHistory.length; i += 1) {
-    if (chatHistory[i].role === 'user' && !isUserMessageAlreadyAnswered(i)) {
+    const msg = chatHistory[i];
+    if (msg.role === 'user' && !isGiftUserMessage(msg) && !isUserMessageAlreadyAnswered(i)) {
       return i;
     }
   }
   return -1;
+}
+
+function findLastUnansweredRoseGiftIndex() {
+  for (let i = chatHistory.length - 1; i >= 0; i -= 1) {
+    const msg = chatHistory[i];
+    if (msg.role === 'user' && msg.type === 'gift' && msg.giftId === 'rose' && !isUserMessageAlreadyAnswered(i)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function historyMessageToApiContent(msg) {
+  if (isGiftUserMessage(msg)) {
+    if (msg.giftId === 'rose') return '[User wysłał Ci wirtualną różę 🌹]';
+    return '[User wysłał Ci prezent]';
+  }
+  return msg.content;
+}
+
+function pickRoseThankYouFallback() {
+  const base = Math.floor(Math.random() * ROSE_THANKS_FALLBACKS.length);
+  const offset = (kolezankaId || 0) + Date.now();
+  return ROSE_THANKS_FALLBACKS[(base + offset) % ROSE_THANKS_FALLBACKS.length];
+}
+
+function buildRoseThankYouMessages() {
+  const systemPrompt = window.KOLEZANKI_PROMPTS?.[kolezankaId];
+  if (!systemPrompt) throw new Error('Brak promptu');
+
+  const tone = ROSE_THANKS_TONES[Math.floor(Math.random() * ROSE_THANKS_TONES.length)];
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+  const taskPrompt = `${systemPrompt}
+
+ZADANIE JEDNORAZOWE (tylko podziękowanie za różę — nie kontynuuj dalszej rozmowy):
+User właśnie wysłał Ci WIRTUALNĄ RÓŻĘ 🌹 jako płatny prezent w czacie.
+Napisz jedno krótkie podziękowanie (max 1 zdanie, styl Messenger/SMS).
+Ton tej odpowiedzi: ${tone}.
+Wariant losowy: ${nonce} — użyj innych słów niż w poprzednich podziękowaniach.
+Nie pytaj o nic. Nie proponuj cennika ani fotek. Bez tagów [SEND_PHOTO], [SHOW_PRICING], [SHOW_TOPUP].
+Emoji 🌹 opcjonalnie (max 1), nie w każdej odpowiedzi.`;
+
+  return [
+    { role: 'system', content: taskPrompt },
+    { role: 'user', content: '[User wysłał Ci wirtualną różę 🌹]' },
+  ];
 }
 
 function getQueryId() {
@@ -421,11 +501,6 @@ function getKolezankaDisplayName() {
   return kolezanka?.imie || kolezanka?.name || 'koleżance';
 }
 
-function pickRoseThankYou() {
-  const idx = (kolezankaId || 0) % ROSE_THANKS_MESSAGES.length;
-  return ROSE_THANKS_MESSAGES[idx];
-}
-
 function appendRoseGiftBubble(messageMeta = null) {
   const box = getMessagesBox();
   if (!box) return null;
@@ -511,28 +586,38 @@ function openRoseGiftModal() {
 async function runRoseThankYouReply() {
   if (chatPaused) return;
 
-  const thanks = pickRoseThankYou();
+  const giftIndex = findLastUnansweredRoseGiftIndex();
+  if (giftIndex === -1) return;
 
   try {
     await waitBeforeReplyDelay();
     if (chatPaused) return;
 
     setTyping(true);
-    await waitFullTypingDuration(thanks);
+
+    let reply;
+    try {
+      reply = await callOpenRouter(buildRoseThankYouMessages(), { temperature: 0.95 });
+    } catch (err) {
+      console.error(err);
+      reply = pickRoseThankYouFallback();
+    }
+
     if (chatPaused) {
       setTyping(false);
       return;
     }
-    setTyping(false);
 
-    const assistantMeta = ensureMessageMeta({ role: 'assistant', content: thanks });
-    appendTextBubble(thanks, false, assistantMeta);
-    chatHistory.push(assistantMeta);
-    saveHistory();
+    const preview = stripAllTags(reply) || reply;
+    await waitFullTypingDuration(preview);
 
-    if (typeof renderInboxContacts === 'function' && chatUi.mode === 'inbox') {
-      renderInboxContacts(document.getElementById('inbox-search')?.value || '');
+    if (chatPaused) {
+      setTyping(false);
+      return;
     }
+
+    setTyping(false);
+    await processAssistantReply(reply);
   } catch (err) {
     setTyping(false);
     console.error(err);
@@ -716,11 +801,11 @@ function renderHistoryMessages() {
   });
 }
 
-async function callOpenRouter(messages) {
+async function callOpenRouter(messages, options = {}) {
   const res = await fetch(CHAT_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages }),
+    body: JSON.stringify({ model: MODEL, messages, ...options }),
   });
 
   if (!res.ok) {
@@ -737,11 +822,22 @@ function buildApiMessagesUpTo(endIndex) {
   const systemPrompt = window.KOLEZANKI_PROMPTS?.[kolezankaId];
   if (!systemPrompt) throw new Error('Brak promptu');
 
-  const messages = [{ role: 'system', content: systemPrompt }];
   const lastIndex = Math.min(endIndex, chatHistory.length - 1);
+  const lastUserMsg = chatHistory[lastIndex];
+
+  let systemContent = systemPrompt;
+  if (lastUserMsg?.role === 'user' && !isGiftUserMessage(lastUserMsg)) {
+    const lastText = stripAllTags(lastUserMsg.content) || lastUserMsg.content;
+    systemContent += `\n\nWAŻNE TERAZ: User właśnie napisał: „${lastText}”. Odpowiedz WYŁĄCZNIE na tę ostatnią wiadomość — naturalnie i na temat. Nie dziękuj ponownie za różę ani inne prezenty, chyba że user znowu o nich pisze.`;
+  }
+
+  const messages = [{ role: 'system', content: systemContent }];
 
   for (let i = 0; i <= lastIndex; i += 1) {
-    messages.push({ role: chatHistory[i].role, content: chatHistory[i].content });
+    messages.push({
+      role: chatHistory[i].role,
+      content: historyMessageToApiContent(chatHistory[i]),
+    });
   }
 
   return messages;

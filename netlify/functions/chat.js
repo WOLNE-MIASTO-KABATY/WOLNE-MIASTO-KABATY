@@ -29,7 +29,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { messages, model } = JSON.parse(event.body || '{}');
+    const { messages, model, temperature } = JSON.parse(event.body || '{}');
     if (!Array.isArray(messages) || !messages.length) {
       return {
         statusCode: 400,
@@ -49,6 +49,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: model || 'deepseek/deepseek-chat',
         messages,
+        ...(typeof temperature === 'number' ? { temperature } : {}),
       }),
     });
 
