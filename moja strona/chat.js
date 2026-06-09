@@ -37,6 +37,31 @@ const ROSE_THANKS_FALLBACKS = [
   'dzieki za roze to milutkie',
 ];
 
+const MAX_API_HISTORY_MESSAGES = 14;
+
+const QUICK_REPLY_RULES = [
+  {
+    test: (t) => /^(nie ma za co|nma za co|dzieki|dzięki|thx)\s*[;:)❤️🌹]*$/i.test(t),
+    replies: ['hehe luz', 'spoko miło mi', 'aa luzik', 'no spoko'],
+  },
+  {
+    test: (t) => /^(jesteś|jestes|tu jesteś|tu jestes|haloo?|halo|yy|ej)\s*\??$/i.test(t),
+    replies: ['tak jestem a co', 'no jestem co tam', 'jestem no a co', 'tak tu jestem'],
+  },
+  {
+    test: (t) => /^co tam(\s+u ciebie)?\s*\??$/i.test(t),
+    replies: ['u mnie spoko a u ciebie', 'dobrze leżę a u ciebie co', 'spoko w domu a ty jak', 'wszystko git a u ciebie'],
+  },
+  {
+    test: (t) => /^(a\s+)?co robisz(\s+teraz)?\s*\??$/i.test(t),
+    replies: ['leżę i scrolluje właśnie a ty', 'nic specjalnego w domu a co u ciebie', 'właśnie się obijam a ty co robisz', 'siedzę w łóżku a ty'],
+  },
+  {
+    test: (t) => /^(siema|hej|hejka|elo)\s*$/i.test(t),
+    replies: ['siema co tam', 'hejka a co u ciebie', 'hej co tam'],
+  },
+];
+
 const ROSE_THANKS_TONES = [
   'zaskoczona i uradowana, naturalnie',
   'słodko i trochę nieśmiało',
@@ -207,11 +232,10 @@ function createEmojiPicker(messageId, anchorEl) {
   activeEmojiPicker = picker;
 }
 
-function mountTextMessage(text, fromUser, messageMeta = null) {
-  const box = getMessagesBox();
-  if (!box || !text.trim()) return null;
-
-  const meta = messageMeta ? ensureMessageMeta({ ...messageMeta }) : ensureMessageMeta({ role: fromUser ? 'user' : 'assistant', content: text });
+function createTextMessageWrap(text, fromUser, messageMeta = null) {
+  const meta = messageMeta
+    ? ensureMessageMeta({ ...messageMeta })
+    : ensureMessageMeta({ role: fromUser ? 'user' : 'assistant', content: text });
 
   const wrap = document.createElement('div');
   wrap.className = `message-wrap message-wrap--${fromUser ? 'user' : 'her'}`;
@@ -247,8 +271,39 @@ function mountTextMessage(text, fromUser, messageMeta = null) {
   footer.appendChild(reactBtn);
   wrap.appendChild(bubble);
   wrap.appendChild(footer);
-  box.appendChild(wrap);
+  return { wrap, meta };
+}
+
+function placeMessageWrapInBox(wrap, afterMessageId = null) {
+  const box = getMessagesBox();
+  if (!box || !wrap) return;
+
+  if (afterMessageId) {
+    const anchor = box.querySelector(`[data-message-id="${afterMessageId}"]`);
+    if (anchor?.parentNode === box) {
+      anchor.insertAdjacentElement('afterend', wrap);
+    } else {
+      box.appendChild(wrap);
+    }
+  } else {
+    box.appendChild(wrap);
+  }
   scrollToBottom();
+}
+
+function mountTextMessage(text, fromUser, messageMeta = null) {
+  const box = getMessagesBox();
+  if (!box || !text.trim()) return null;
+
+  const { wrap, meta } = createTextMessageWrap(text, fromUser, messageMeta);
+  placeMessageWrapInBox(wrap);
+  return meta;
+}
+
+function insertTextMessageAfter(afterMessageId, text, fromUser, messageMeta = null) {
+  if (!text.trim()) return null;
+  const { wrap, meta } = createTextMessageWrap(text, fromUser, messageMeta);
+  placeMessageWrapInBox(wrap, afterMessageId);
   return meta;
 }
 
@@ -283,7 +338,17 @@ function isGiftUserMessage(msg) {
 }
 
 function isUserMessageAlreadyAnswered(userMessageIndex) {
-  return chatHistory[userMessageIndex + 1]?.role === 'assistant';
+  const current = chatHistory[userMessageIndex];
+  if (isGiftUserMessage(current)) {
+    return chatHistory[userMessageIndex + 1]?.role === 'assistant';
+  }
+
+  for (let i = userMessageIndex + 1; i < chatHistory.length; i += 1) {
+    const msg = chatHistory[i];
+    if (msg.role === 'assistant') return true;
+    if (msg.role === 'user' && !isGiftUserMessage(msg)) return false;
+  }
+  return false;
 }
 
 function getFirstUnansweredUserIndex() {
@@ -308,10 +373,58 @@ function findLastUnansweredRoseGiftIndex() {
 
 function historyMessageToApiContent(msg) {
   if (isGiftUserMessage(msg)) {
-    if (msg.giftId === 'rose') return '[User wysłał Ci wirtualną różę 🌹]';
-    return '[User wysłał Ci prezent]';
+    if (msg.giftId === 'rose') return '[User wysłał Ci wirtualną różę 🌹 — już podziękowałaś]';
+    return '[User wysłał Ci prezent — już podziękowałaś]';
   }
   return msg.content;
+}
+
+function normalizeUserText(text) {
+  return (text || '').trim().replace(/\s+/g, ' ');
+}
+
+function tryQuickReply(userText) {
+  const t = normalizeUserText(userText).toLowerCase();
+  if (!t) return null;
+
+  for (const rule of QUICK_REPLY_RULES) {
+    if (rule.test(t)) {
+      const replies = rule.replies;
+      const pick = replies[Math.floor(Math.random() * replies.length)];
+      return pick;
+    }
+  }
+  return null;
+}
+
+function getReplyIntentHint(userText) {
+  const t = normalizeUserText(userText).toLowerCase();
+
+  if (/^(jesteś|jestes|tu jesteś|tu jestes|haloo?|halo)\s*\??$/.test(t)) {
+    return 'User pyta czy jesteś online — potwierdź krótko (np. "tak jestem a co"). NIE chwal go za słodycz ani nie mów o róży.';
+  }
+  if (/co tam/.test(t)) {
+    return 'User pyta jak się masz — powiedz co u ciebie i zapytaj o niego. NIE dziękuj za różę ani prezent.';
+  }
+  if (/co robisz|czym się zajmujesz/.test(t)) {
+    return 'User pyta co teraz robisz — opisz krótko czynność (np. leżysz, scrollujesz). NIE mów o "miłej rozmowie" ani ogólnikach.';
+  }
+  if (/nie ma za co|nma za co/.test(t)) {
+    return 'User mówi "nie ma za co" — przyjmij krótko ("luz", "miło mi"). NIE pisz że jest słodki.';
+  }
+  if (/\?/.test(t)) {
+    return 'User zadał pytanie — odpowiedz na to pytanie wprost. Bez ogólników typu "miło że mamy rozmowę" lub "miło z twojej strony".';
+  }
+  return 'Odpowiedz konkretnie na ostatnią wiadomość usera. Bez pustych komplementów i ogólników.';
+}
+
+function isOffTopicReply(reply, userText) {
+  const r = (reply || '').toLowerCase();
+  const u = normalizeUserText(userText).toLowerCase();
+  const genericBad =
+    /miło że (mamy|jesteś)|miło z twojej strony|taką miłą rozmowę|jesteś (taki )?słodki|miło że mamy taką/;
+  if (!genericBad.test(r)) return false;
+  return /\?/.test(u) || /co tam|co robisz|jesteś|jestes|czym się/.test(u);
 }
 
 function pickRoseThankYouFallback() {
@@ -617,7 +730,7 @@ async function runRoseThankYouReply() {
     }
 
     setTyping(false);
-    await processAssistantReply(reply);
+    await processAssistantReply(reply, giftIndex);
   } catch (err) {
     setTyping(false);
     console.error(err);
@@ -823,24 +936,91 @@ function buildApiMessagesUpTo(endIndex) {
   if (!systemPrompt) throw new Error('Brak promptu');
 
   const lastIndex = Math.min(endIndex, chatHistory.length - 1);
-  const lastUserMsg = chatHistory[lastIndex];
+  const targetMsg = chatHistory[lastIndex];
+  const targetText =
+    targetMsg?.role === 'user' && !isGiftUserMessage(targetMsg)
+      ? stripAllTags(targetMsg.content) || targetMsg.content
+      : '';
 
   let systemContent = systemPrompt;
-  if (lastUserMsg?.role === 'user' && !isGiftUserMessage(lastUserMsg)) {
-    const lastText = stripAllTags(lastUserMsg.content) || lastUserMsg.content;
-    systemContent += `\n\nWAŻNE TERAZ: User właśnie napisał: „${lastText}”. Odpowiedz WYŁĄCZNIE na tę ostatnią wiadomość — naturalnie i na temat. Nie dziękuj ponownie za różę ani inne prezenty, chyba że user znowu o nich pisze.`;
+  if (targetText) {
+    systemContent += `\n\n=== TERAZ ODPOWIADASZ NA: „${targetText}” ===\n${getReplyIntentHint(targetText)}`;
   }
 
   const messages = [{ role: 'system', content: systemContent }];
 
-  for (let i = 0; i <= lastIndex; i += 1) {
+  let startIndex = Math.max(0, lastIndex - MAX_API_HISTORY_MESSAGES + 1);
+  while (startIndex > 0 && chatHistory[startIndex]?.role === 'assistant') {
+    startIndex -= 1;
+  }
+
+  for (let i = startIndex; i <= lastIndex; i += 1) {
     messages.push({
       role: chatHistory[i].role,
       content: historyMessageToApiContent(chatHistory[i]),
     });
   }
 
+  if (targetText) {
+    messages.push({
+      role: 'user',
+      content: `(Odpowiedz teraz tylko na: „${targetText}”)`,
+    });
+  }
+
   return messages;
+}
+
+async function replyToUserMessageAt(userMessageIndex) {
+  const userText = stripAllTags(chatHistory[userMessageIndex]?.content) || '';
+
+  const quick = tryQuickReply(userText);
+  if (quick) {
+    await waitBeforeReplyDelay();
+    if (chatPaused) return;
+    setTyping(true);
+    await waitFullTypingDuration(quick);
+    if (chatPaused) {
+      setTyping(false);
+      return;
+    }
+    setTyping(false);
+    await processAssistantReply(quick, userMessageIndex);
+    return;
+  }
+
+  await waitBeforeReplyDelay();
+  if (chatPaused) return;
+
+  setTyping(true);
+
+  let reply = await callOpenRouter(buildApiMessagesUpTo(userMessageIndex), { temperature: 0.72 });
+
+  if (isOffTopicReply(reply, userText)) {
+    const retryMessages = buildApiMessagesUpTo(userMessageIndex);
+    retryMessages[0].content += `\n\nPOPRZEDNIA ODPOWIEDŹ BYŁA ZŁA (nie na temat). Napisz INACZEJ — konkretnie na: „${userText}”.`;
+    reply = await callOpenRouter(retryMessages, { temperature: 0.55 });
+  }
+
+  if (isOffTopicReply(reply, userText)) {
+    reply = tryQuickReply(userText) || reply;
+  }
+
+  if (chatPaused) {
+    setTyping(false);
+    return;
+  }
+
+  const preview = stripAllTags(reply) || reply;
+  await waitFullTypingDuration(preview);
+
+  if (chatPaused) {
+    setTyping(false);
+    return;
+  }
+
+  setTyping(false);
+  await processAssistantReply(reply, userMessageIndex);
 }
 
 function handlePhotoSend() {
@@ -860,58 +1040,49 @@ function enqueueBotReply(task) {
 async function runBotReplyCycle() {
   if (chatPaused) return;
 
-  const userMessageIndex = getFirstUnansweredUserIndex();
-  if (userMessageIndex === -1) return;
-
   try {
-    await waitBeforeReplyDelay();
-    if (chatPaused) return;
+    while (!chatPaused) {
+      const userMessageIndex = getFirstUnansweredUserIndex();
+      if (userMessageIndex === -1) break;
 
-    setTyping(true);
-
-    const reply = await callOpenRouter(buildApiMessagesUpTo(userMessageIndex));
-    if (chatPaused) {
-      setTyping(false);
-      return;
-    }
-
-    const preview = stripAllTags(reply) || reply;
-    await waitFullTypingDuration(preview);
-
-    if (chatPaused) {
-      setTyping(false);
-      return;
-    }
-
-    setTyping(false);
-    await processAssistantReply(reply);
-  } catch (err) {
-    const fallback = 'kurde cos nie poszlo, sprobuj jeszcze raz';
-    if (!chatPaused) {
-      if (!typingBubbleEl) setTyping(true);
-      await waitFullTypingDuration(fallback);
-      setTyping(false);
-      const fallbackMeta = ensureMessageMeta({ role: 'assistant', content: fallback });
-      appendTextBubble(fallback, false, fallbackMeta);
-      if (!isUserMessageAlreadyAnswered(userMessageIndex)) {
-        chatHistory.push(fallbackMeta);
-        saveHistory();
+      try {
+        await replyToUserMessageAt(userMessageIndex);
+      } catch (err) {
+        const userText = stripAllTags(chatHistory[userMessageIndex]?.content) || '';
+        const fallback = tryQuickReply(userText) || 'kurde cos nie poszlo, sprobuj jeszcze raz';
+        if (!chatPaused && !isUserMessageAlreadyAnswered(userMessageIndex)) {
+          if (!typingBubbleEl) setTyping(true);
+          await waitFullTypingDuration(fallback);
+          setTyping(false);
+          await processAssistantReply(fallback, userMessageIndex);
+        } else {
+          setTyping(false);
+        }
+        console.error(err);
       }
-    } else {
-      setTyping(false);
     }
+  } catch (err) {
+    setTyping(false);
     console.error(err);
   }
 }
 
-async function processAssistantReply(rawReply) {
+async function processAssistantReply(rawReply, insertAfterIndex = null) {
   const parsed = parseAssistantTags(rawReply);
 
   const assistantMeta = ensureMessageMeta({ role: 'assistant', content: rawReply });
-  chatHistory.push(assistantMeta);
+
+  if (insertAfterIndex !== null && insertAfterIndex >= 0 && insertAfterIndex < chatHistory.length) {
+    chatHistory.splice(insertAfterIndex + 1, 0, assistantMeta);
+    const anchorId = chatHistory[insertAfterIndex]?.id;
+    if (parsed.text) insertTextMessageAfter(anchorId, parsed.text, false, assistantMeta);
+  } else {
+    chatHistory.push(assistantMeta);
+    if (parsed.text) appendTextBubble(parsed.text, false, assistantMeta);
+  }
+
   saveHistory();
 
-  if (parsed.text) appendTextBubble(parsed.text, false, assistantMeta);
   if (parsed.showPricing || parsed.showTopup) appendActionButtons(parsed);
   if (parsed.sendPhoto) handlePhotoSend();
 
