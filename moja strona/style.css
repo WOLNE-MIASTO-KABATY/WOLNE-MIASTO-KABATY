@@ -2677,6 +2677,16 @@ button {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+.inbox-thread__messages .message-wrap {
+  max-width: min(85%, 520px);
+  width: fit-content;
+}
+
+.inbox-thread__messages .message-wrap .message-bubble {
+  max-width: 100%;
+  width: auto;
+}
+
 .inbox-thread__attach {
   width: 38px;
   height: 38px;
@@ -2690,6 +2700,93 @@ button {
   color: #e2e8f0;
   border-color: rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-thread__gift,
+.ai-chat-composer__gift {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  font-family: inherit;
+  padding: 0;
+  overflow: hidden;
+}
+
+.ai-chat-composer__gift {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.inbox-thread__gift:hover:not(:disabled),
+.ai-chat-composer__gift:hover:not(:disabled) {
+  color: #fce7f3;
+  border-color: rgba(236, 72, 153, 0.45);
+  background: rgba(236, 72, 153, 0.12);
+  transform: scale(1.04);
+}
+
+.inbox-thread__gift:disabled,
+.ai-chat-composer__gift:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.composer-gift-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.composer-gift-icon--fallback {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.message-bubble--gift {
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.chat-gift-image {
+  width: min(180px, 70vw);
+  height: auto;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.chat-gift-caption {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #fce7f3;
+  letter-spacing: 0.02em;
+}
+
+.inbox-thread__messages .message-bubble--gift {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(236, 72, 153, 0.4);
 }
 
 .inbox-pricing .btn--ghost {
@@ -6055,14 +6152,15 @@ button.profile-card__btn--chat {
 }
 
 .message-bubble {
-  max-width: min(78%, 320px);
+  max-width: min(85%, 520px);
   width: fit-content;
   padding: 0.7rem 0.95rem;
   border-radius: 18px;
   font-size: 0.9rem;
   line-height: 1.45;
   word-wrap: break-word;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .message-bubble--her {
@@ -6089,7 +6187,7 @@ button.profile-card__btn--chat {
   align-self: flex-start;
   margin-right: auto;
   width: fit-content;
-  max-width: min(85%, 300px);
+  max-width: min(85%, 520px);
 }
 
 .message-bubble--fade {
@@ -6100,8 +6198,14 @@ button.profile-card__btn--chat {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  max-width: min(82%, 340px);
+  max-width: min(85%, 520px);
+  width: fit-content;
   position: relative;
+}
+
+.message-wrap .message-bubble {
+  max-width: 100%;
+  width: auto;
 }
 
 .message-wrap--user {
@@ -6611,9 +6715,17 @@ button.profile-card__btn--chat {
     padding: 0.85rem 0.75rem;
   }
 
+  .message-wrap {
+    max-width: min(90%, 100%);
+  }
+
   .message-bubble {
-    max-width: 85%;
+    max-width: min(90%, 520px);
     font-size: 0.88rem;
+  }
+
+  .message-wrap .message-bubble {
+    max-width: 100%;
   }
 
   .ai-chat-composer {

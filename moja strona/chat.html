@@ -160,6 +160,9 @@
                 <button type="button" class="ai-chat-composer__attach" disabled aria-label="Załącz plik (wkrótce)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
+                <button type="button" class="ai-chat-composer__gift" id="chat-gift" aria-label="Wyślij wirtualną różę (15 żetonów)">
+                  <img src="images/gifts/rose.gif" alt="" class="composer-gift-icon" width="22" height="22">
+                </button>
                 <input type="text" class="ai-chat-composer__input" id="chat-input" placeholder="Napisz wiadomość..." autocomplete="off">
                 <button type="button" class="ai-chat-composer__send" id="chat-send" aria-label="Wyślij">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
@@ -279,6 +282,16 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="end-modal" id="rose-gift-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="rose-gift-title">
+    <div class="end-modal-overlay" id="rose-gift-overlay"></div>
+    <div class="end-modal__panel">
+      <h2 class="end-modal__title" id="rose-gift-title">Wirtualna róża</h2>
+      <p class="end-modal__text" id="rose-gift-text">Czy na pewno chcesz podarować wirtualną różę?</p>
+      <button type="button" class="btn btn--primary btn--full" id="rose-gift-confirm">Tak, wyślij</button>
+      <button type="button" class="btn btn--ghost btn--full" id="rose-gift-cancel">Nie</button>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="auth.js"></script>

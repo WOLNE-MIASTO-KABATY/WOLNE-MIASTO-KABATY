@@ -1445,6 +1445,16 @@ function purchaseShopItem(shopId) {
   const item = PRICING_SHOP_ITEMS.find((i) => i.id === shopId);
   if (!item) return;
 
+  if (shopId === 'shop-rose') {
+    closeInboxPricing();
+    if (window.AiChat?.openRoseGiftModal) {
+      window.AiChat.openRoseGiftModal();
+    } else {
+      showToast('Otwórz rozmowę z koleżanką, aby wysłać różę.');
+    }
+    return;
+  }
+
   const balance = getTokenBalance();
   if (balance < item.cost) {
     showToast('Za mało żetonów — doładuj portfel w sekcji poniżej.');

@@ -8,9 +8,19 @@ const CHAT_DURATION_MS = 90000;
 const EXTENSION_MS = 600000;
 const EXTENSION_COST = 30;
 const PHOTO_UNLOCK_COST = 20;
+const ROSE_GIFT_COST = 15;
+const ROSE_GIFT_SRC = 'images/gifts/rose.gif';
 const PHOTO_TAG = '[SEND_PHOTO]';
 const PRICING_TAG = '[SHOW_PRICING]';
 const TOPUP_TAG = '[SHOW_TOPUP]';
+
+const ROSE_THANKS_MESSAGES = [
+  'o dziekuje za rozyczke 🌹 to takie slodkie od ciebie',
+  'aww dziekuje serducho 🌹',
+  'jeej rozyczka 🌹 bardzo milo',
+  'dziekuje pieknie 🌹 uwielbiam takie gesty',
+  'o nie musiales ale dziekuje 🌹',
+];
 
 let kolezanka = null;
 let kolezankaId = null;
@@ -407,6 +417,172 @@ function appendTextBubble(text, fromUser, messageMeta = null) {
   return mountTextMessage(text, fromUser, messageMeta);
 }
 
+function getKolezankaDisplayName() {
+  return kolezanka?.imie || kolezanka?.name || 'koleżance';
+}
+
+function pickRoseThankYou() {
+  const idx = (kolezankaId || 0) % ROSE_THANKS_MESSAGES.length;
+  return ROSE_THANKS_MESSAGES[idx];
+}
+
+function appendRoseGiftBubble(messageMeta = null) {
+  const box = getMessagesBox();
+  if (!box) return null;
+
+  const meta = messageMeta
+    ? ensureMessageMeta({ ...messageMeta })
+    : ensureMessageMeta({
+        role: 'user',
+        type: 'gift',
+        giftId: 'rose',
+        content: 'Wysłałem wirtualną różę 🌹',
+      });
+
+  const wrap = document.createElement('div');
+  wrap.className = 'message-wrap message-wrap--user';
+  wrap.dataset.messageId = meta.id;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble message-bubble--user message-bubble--gift message-bubble--fade';
+
+  const img = document.createElement('img');
+  img.src = ROSE_GIFT_SRC;
+  img.alt = 'Wirtualna róża';
+  img.className = 'chat-gift-image';
+  img.loading = 'eager';
+  img.onerror = () => {
+    img.remove();
+    const fallback = document.createElement('span');
+    fallback.className = 'composer-gift-icon--fallback';
+    fallback.textContent = '🌹';
+    fallback.style.fontSize = '3rem';
+    bubble.prepend(fallback);
+  };
+  bubble.appendChild(img);
+
+  const caption = document.createElement('span');
+  caption.className = 'chat-gift-caption';
+  caption.textContent = 'Wirtualna róża 🌹';
+  bubble.appendChild(caption);
+
+  wrap.appendChild(bubble);
+  box.appendChild(wrap);
+  scrollToBottom();
+  return meta;
+}
+
+function closeRoseGiftModal() {
+  const modal = document.getElementById('rose-gift-modal');
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function openRoseGiftModal() {
+  if (!kolezankaId) {
+    if (typeof showToast === 'function') showToast('Wybierz rozmowę, aby wysłać prezent.');
+    return;
+  }
+  if (chatPaused) {
+    if (typeof showToast === 'function') showToast('Czat jest wstrzymany — doładuj żetony lub przedłuż rozmowę.');
+    return;
+  }
+
+  const modal = document.getElementById('rose-gift-modal');
+  const textEl = document.getElementById('rose-gift-text');
+  const name = getKolezankaDisplayName();
+
+  if (textEl) {
+    textEl.textContent = '';
+    textEl.append('Czy na pewno chcesz podarować wirtualną różę użytkowniczce ');
+    const strong = document.createElement('strong');
+    strong.textContent = name;
+    textEl.append(strong, `? Koszt: ${ROSE_GIFT_COST} żetonów.`);
+  }
+
+  if (modal) {
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+async function runRoseThankYouReply() {
+  if (chatPaused) return;
+
+  const thanks = pickRoseThankYou();
+
+  try {
+    await waitBeforeReplyDelay();
+    if (chatPaused) return;
+
+    setTyping(true);
+    await waitFullTypingDuration(thanks);
+    if (chatPaused) {
+      setTyping(false);
+      return;
+    }
+    setTyping(false);
+
+    const assistantMeta = ensureMessageMeta({ role: 'assistant', content: thanks });
+    appendTextBubble(thanks, false, assistantMeta);
+    chatHistory.push(assistantMeta);
+    saveHistory();
+
+    if (typeof renderInboxContacts === 'function' && chatUi.mode === 'inbox') {
+      renderInboxContacts(document.getElementById('inbox-search')?.value || '');
+    }
+  } catch (err) {
+    setTyping(false);
+    console.error(err);
+  }
+}
+
+async function sendRoseGift() {
+  closeRoseGiftModal();
+
+  if (!kolezankaId || chatPaused || userSendLocked) {
+    if (typeof showToast === 'function') showToast('Nie można teraz wysłać prezentu.');
+    return;
+  }
+
+  const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
+  if (balance < ROSE_GIFT_COST) {
+    if (typeof showToast === 'function') showToast(`Za mało żetonów — potrzebujesz ${ROSE_GIFT_COST}.`);
+    openTopupModal();
+    return;
+  }
+
+  if (typeof setTokenBalance === 'function') {
+    setTokenBalance(balance - ROSE_GIFT_COST);
+  }
+  if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
+  if (typeof updateInboxPricingBalance === 'function') updateInboxPricingBalance();
+
+  const userMeta = ensureMessageMeta({
+    role: 'user',
+    type: 'gift',
+    giftId: 'rose',
+    content: 'Wysłałem wirtualną różę 🌹',
+  });
+  appendRoseGiftBubble(userMeta);
+  chatHistory.push(userMeta);
+  saveHistory();
+
+  if (typeof renderInboxContacts === 'function' && chatUi.mode === 'inbox') {
+    renderInboxContacts(document.getElementById('inbox-search')?.value || '');
+  }
+
+  if (!getSessionEnd(kolezankaId)) {
+    setSessionEnd(kolezankaId, Date.now() + CHAT_DURATION_MS);
+    startChatTimer();
+  }
+
+  if (typeof showToast === 'function') showToast('Wysłano wirtualną różę!');
+  await enqueueBotReply(runRoseThankYouReply);
+}
+
 function appendActionButtons(actions) {
   const box = getMessagesBox();
   if (!box) return;
@@ -522,6 +698,10 @@ function renderHistoryMessages() {
   chatHistory.forEach((msg, idx) => {
     ensureMessageMeta(msg);
     if (msg.role === 'user') {
+      if (msg.type === 'gift' && msg.giftId === 'rose') {
+        appendRoseGiftBubble(msg);
+        return;
+      }
       const text = stripAllTags(msg.content);
       if (text) appendTextBubble(text, true, msg);
     } else if (msg.role === 'assistant') {
@@ -675,6 +855,10 @@ async function sendUserMessage(text) {
   }
 }
 
+function getGiftButtons() {
+  return [document.getElementById('chat-gift'), document.getElementById('inbox-thread-gift')].filter(Boolean);
+}
+
 function disableComposer(message) {
   chatPaused = true;
   const input = getChatInput();
@@ -684,6 +868,9 @@ function disableComposer(message) {
     input.placeholder = message || 'Rozmowa wstrzymana';
   }
   if (send) send.disabled = true;
+  getGiftButtons().forEach((btn) => {
+    btn.disabled = true;
+  });
 }
 
 function enableComposer() {
@@ -695,6 +882,9 @@ function enableComposer() {
     input.placeholder = 'Napisz wiadomość...';
   }
   if (send) send.disabled = false;
+  getGiftButtons().forEach((btn) => {
+    btn.disabled = false;
+  });
 }
 
 function showExtensionModal() {
@@ -805,6 +995,11 @@ function openChatPricingModal() {
       btn.addEventListener('click', () => {
         const item = PRICING_SHOP_ITEMS.find((i) => i.id === btn.dataset.shopId);
         if (!item) return;
+        if (item.id === 'shop-rose') {
+          closeChatPricingModal();
+          openRoseGiftModal();
+          return;
+        }
         const bal = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
         if (bal < item.cost) {
           if (typeof showToast === 'function') showToast('Za mało żetonów.');
@@ -874,6 +1069,12 @@ function bindModals() {
   document.getElementById('chat-topup-close')?.addEventListener('click', closeTopupModal);
   document.getElementById('chat-topup-backdrop')?.addEventListener('click', closeTopupModal);
 
+  document.getElementById('rose-gift-confirm')?.addEventListener('click', () => {
+    sendRoseGift();
+  });
+  document.getElementById('rose-gift-cancel')?.addEventListener('click', closeRoseGiftModal);
+  document.getElementById('rose-gift-overlay')?.addEventListener('click', closeRoseGiftModal);
+
   const cryptoBtn = document.getElementById('chat-topup-crypto');
   const discordBtn = document.getElementById('chat-topup-discord');
   if (cryptoBtn) {
@@ -882,6 +1083,31 @@ function bindModals() {
   if (discordBtn) {
     discordBtn.href = typeof TOPUP_DISCORD_URL !== 'undefined' ? TOPUP_DISCORD_URL : '#';
   }
+}
+
+function setupGiftButtonIcon(btn) {
+  if (!btn || btn.dataset.giftIconReady) return;
+  btn.dataset.giftIconReady = '1';
+  const img = btn.querySelector('.composer-gift-icon');
+  if (!img) return;
+  img.addEventListener('error', () => {
+    img.remove();
+    const fallback = document.createElement('span');
+    fallback.className = 'composer-gift-icon--fallback';
+    fallback.textContent = '🌹';
+    fallback.setAttribute('aria-hidden', 'true');
+    btn.appendChild(fallback);
+  }, { once: true });
+}
+
+function bindRoseGiftButtons() {
+  ['chat-gift', 'inbox-thread-gift'].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (!btn || btn.dataset.roseBound) return;
+    btn.dataset.roseBound = '1';
+    setupGiftButtonIcon(btn);
+    btn.addEventListener('click', openRoseGiftModal);
+  });
 }
 
 function bindComposer() {
@@ -990,6 +1216,8 @@ async function activateInboxChat(profileId) {
 window.AiChat = {
   activateInbox: activateInboxChat,
   sendMessage: sendUserMessage,
+  openRoseGiftModal,
+  sendRoseGift,
   isPaused: () => chatPaused,
 };
 
@@ -1017,6 +1245,7 @@ async function initAiChat() {
 
   setupHeader();
   bindComposer();
+  bindRoseGiftButtons();
   bindModals();
 
   if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
@@ -1037,6 +1266,7 @@ async function initAiChat() {
 
 document.addEventListener('DOMContentLoaded', () => {
   bindModals();
+  bindRoseGiftButtons();
   if (document.body.classList.contains('page-chat')) {
     initAiChat();
   }
