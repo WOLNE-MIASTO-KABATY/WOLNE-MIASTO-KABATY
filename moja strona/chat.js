@@ -544,7 +544,10 @@ function setSessionEnd(id, timestamp) {
 }
 
 function avatarPath(id) {
-  return `images/kolezanki/${id}/avatar.jpg`;
+  if (typeof window.getProfileAvatarPath === 'function') {
+    return window.getProfileAvatarPath(id);
+  }
+  return `images/profiles/natalia.png`;
 }
 
 function photoPath(id, index) {

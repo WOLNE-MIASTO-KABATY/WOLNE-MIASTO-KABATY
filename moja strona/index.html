@@ -142,8 +142,9 @@
             <section class="hero-panel" id="hero">
               <div class="hero-slider hero-slider--static" id="hero-slider">
                 <div class="hero-slider__track" id="hero-slider-track">
-                  <div class="hero-slider__slide is-active hero-slider__slide--placeholder">
-                    <img src="images/hero-placeholder.png" alt="Baner — wkrótce" width="1200" height="525" loading="eager">
+                  <!-- MEM (Son?) — przywróć baner: src="images/hero-placeholder.png" alt="Baner — wkrótce" i usuń klasę hero-slider__slide--meme -->
+                  <div class="hero-slider__slide is-active hero-slider__slide--placeholder hero-slider__slide--meme">
+                    <img src="images/hero-son-meme.png" alt="Son?" width="1200" height="525" loading="eager">
                   </div>
                 </div>
               </div>
@@ -207,28 +208,88 @@
         </section>
 
         <section class="content-hub section-block" id="gry">
-          <div class="section-block__inner">
-            <h2 class="section-title"><span class="section-title__line"></span>Gry</h2>
-            <p class="section-subtitle">Gry i rozrywka online — wkrótce więcej tytułów</p>
+          <div class="section-block__inner content-hub__inner">
+            <header class="content-hub__header">
+              <div class="content-hub__title-row">
+                <h2 class="content-hub__title">Gry <span class="section-title__badge-18" aria-label="Treści dla dorosłych">18+</span></h2>
+              </div>
+              <p class="content-hub__subtitle">Gry i rozrywka online — wkrótce więcej tytułów</p>
+            </header>
             <div class="content-hub__grid">
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Gra wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Gra wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Gra wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Gra wkrótce"></article>
+              <article class="content-hub__card content-hub__card--cover content-hub__card--game" data-content-id="game-rick-and-morty" data-content-type="game" data-content-locked="1">
+                <div class="content-hub__cover">
+                  <img src="images/games/rick-and-morty.png" alt="Okładka gry Rick And Morty" width="640" height="360" loading="lazy">
+                </div>
+                <div class="content-hub__card-body">
+                  <div class="content-hub__card-head">
+                    <h3 class="content-hub__card-title">Rick And Morty <span class="content-hub__badge-18" aria-hidden="true">18+</span></h3>
+                    <p class="content-hub__card-meta">4 godzin fabuły</p>
+                  </div>
+                  <div class="content-hub__actions">
+                    <span class="disc-card__lock content-hub__lock disc-card__lock--closed" title="Zablokowane" aria-label="Zablokowane"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+                    <button type="button" class="content-hub__claim disc-card__claim">Odbierz</button>
+                  </div>
+                </div>
+              </article>
+              <article class="content-hub__card content-hub__card--cover content-hub__card--game" data-content-id="game-mlodzi-tytani" data-content-type="game" data-content-locked="1">
+                <div class="content-hub__cover">
+                  <img src="images/games/teen-titans.png" alt="Okładka gry Młodzi Tytani" width="819" height="641" loading="lazy">
+                </div>
+                <div class="content-hub__card-body">
+                  <div class="content-hub__card-head">
+                    <h3 class="content-hub__card-title">Młodzi Tytani <span class="content-hub__badge-18" aria-hidden="true">18+</span></h3>
+                    <p class="content-hub__card-meta">20 godzin fabuły</p>
+                  </div>
+                  <div class="content-hub__actions">
+                    <span class="disc-card__lock content-hub__lock disc-card__lock--closed" title="Zablokowane" aria-label="Zablokowane"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+                    <button type="button" class="content-hub__claim disc-card__claim">Odbierz</button>
+                  </div>
+                </div>
+              </article>
               <article class="content-hub__card content-hub__card--placeholder" aria-label="Gra wkrótce"></article>
             </div>
           </div>
         </section>
 
         <section class="content-hub section-block" id="komiksy">
-          <div class="section-block__inner">
-            <h2 class="section-title"><span class="section-title__line"></span>Komiksy</h2>
-            <p class="section-subtitle">Komiksy i serie — wkrótce nowe rozdziały</p>
+          <div class="section-block__inner content-hub__inner">
+            <header class="content-hub__header">
+              <div class="content-hub__title-row">
+                <h2 class="content-hub__title">Komiksy <span class="section-title__badge-18" aria-label="Treści dla dorosłych">18+</span></h2>
+              </div>
+              <p class="content-hub__subtitle">Komiksy i serie — wkrótce nowe rozdziały</p>
+            </header>
             <div class="content-hub__grid">
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Komiks wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Komiks wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Komiks wkrótce"></article>
-              <article class="content-hub__card content-hub__card--placeholder" aria-label="Komiks wkrótce"></article>
+              <article class="content-hub__card content-hub__card--cover content-hub__card--comic" data-content-id="comic-iniemamocni" data-content-type="comic" data-content-locked="1">
+                <div class="content-hub__cover">
+                  <img class="content-hub__cover-img content-hub__cover-img--iniemamocni" src="images/comics/iniemamocni.png" alt="Okładka komiksu Iniemamocni" width="471" height="880" loading="lazy">
+                </div>
+                <div class="content-hub__card-body">
+                  <div class="content-hub__card-head">
+                    <h3 class="content-hub__card-title">Iniemamocni <span class="content-hub__badge-18" aria-hidden="true">18+</span></h3>
+                    <p class="content-hub__card-meta">630 stron</p>
+                  </div>
+                  <div class="content-hub__actions">
+                    <span class="disc-card__lock content-hub__lock disc-card__lock--closed" title="Zablokowane" aria-label="Zablokowane"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+                    <button type="button" class="content-hub__claim disc-card__claim">Odbierz</button>
+                  </div>
+                </div>
+              </article>
+              <article class="content-hub__card content-hub__card--cover content-hub__card--comic" data-content-id="comic-mlodzi-tytani" data-content-type="comic" data-content-locked="1">
+                <div class="content-hub__cover">
+                  <img class="content-hub__cover-img content-hub__cover-img--mlodzi-tytani" src="images/comics/mlodzi-tytani.png" alt="Okładka komiksu Młodzi Tytani" width="813" height="880" loading="lazy">
+                </div>
+                <div class="content-hub__card-body">
+                  <div class="content-hub__card-head">
+                    <h3 class="content-hub__card-title">Młodzi Tytani <span class="content-hub__badge-18" aria-hidden="true">18+</span></h3>
+                    <p class="content-hub__card-meta">60 stron</p>
+                  </div>
+                  <div class="content-hub__actions">
+                    <span class="disc-card__lock content-hub__lock disc-card__lock--closed" title="Zablokowane" aria-label="Zablokowane"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+                    <button type="button" class="content-hub__claim disc-card__claim">Odbierz</button>
+                  </div>
+                </div>
+              </article>
               <article class="content-hub__card content-hub__card--placeholder" aria-label="Komiks wkrótce"></article>
             </div>
           </div>
@@ -313,7 +374,8 @@
         </div>
         <button type="button" class="token-modal__close" id="token-modal-close" aria-label="Zamknij">&times;</button>
       </header>
-      <p class="token-modal__balance">Aktualny stan: <strong id="token-balance-modal">0</strong> żetonów</p>
+      <p class="token-modal__balance">Twój stan: <strong id="token-balance-modal">0</strong> żetonów</p>
+      <h4 class="pricing-ui__section-title">Doładuj żetony</h4>
       <div class="token-packages" id="token-packages"></div>
       <p class="token-modal__note">Płatność demo — po integracji podłącz bramkę płatności / link afiliacyjny.</p>
     </div>
@@ -444,9 +506,9 @@
               <h3 class="inbox-pricing__title">Cennik</h3>
               <p class="inbox-pricing__subtitle">Zakup dodatków i usług za żetony</p>
               <p class="inbox-pricing__balance">Twój stan: <strong id="inbox-pricing-balance">0</strong> żetonów</p>
-              <h4 class="inbox-pricing__section-title">Kup za żetony</h4>
+              <h4 class="pricing-ui__section-title">Kup za żetony</h4>
               <div class="inbox-pricing__shop" id="inbox-pricing-shop"></div>
-              <h4 class="inbox-pricing__section-title">Doładuj żetony</h4>
+              <h4 class="pricing-ui__section-title">Doładuj żetony</h4>
               <div class="inbox-pricing__packages" id="inbox-pricing-packages"></div>
               <button type="button" class="btn btn--ghost btn--full" id="inbox-pricing-back">← Wróć do czatu</button>
             </div>

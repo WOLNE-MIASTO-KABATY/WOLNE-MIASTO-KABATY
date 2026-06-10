@@ -106,15 +106,56 @@ const DISC_GRID_NAMES = [
 ];
 
 const DISC_UNLOCK_COST = 20;
+const GAME_UNLOCK_COST = 50;
+const COMIC_UNLOCK_COST = 30;
 const UNLOCKED_DISCS_KEY = 'flirtmatch_unlocked_discs';
+const UNLOCKED_CONTENT_KEY = 'flirtmatch_unlocked_content';
 
 /** Link do dysku — podmień na swój URL lub zostaw placeholder */
 const DISC_LINK_BASE = '#DISC_LINK_HERE';
 
+/** Link do gier / komiksów — podmień na swój URL */
+const CONTENT_LINK_BASE = '#CONTENT_LINK_HERE';
+
 /** Link do reklamy (odblokowanie dysku) — podmień na swój URL */
 const DISC_AD_LINK = '#DISC_AD_LINK_HERE';
 
+const CONTENT_HUB_ITEMS = {
+  'game-rick-and-morty': {
+    type: 'game',
+    cost: GAME_UNLOCK_COST,
+    name: 'Rick And Morty',
+    image: 'images/games/rick-and-morty.png',
+    meta: '4 godzin fabuły',
+  },
+  'game-mlodzi-tytani': {
+    type: 'game',
+    cost: GAME_UNLOCK_COST,
+    name: 'Młodzi Tytani',
+    image: 'images/games/teen-titans.png',
+    meta: '20 godzin fabuły',
+  },
+  'comic-iniemamocni': {
+    type: 'comic',
+    cost: COMIC_UNLOCK_COST,
+    name: 'Iniemamocni',
+    image: 'images/comics/iniemamocni.png',
+    previewPosition: 'center 30%',
+    meta: '630 stron',
+  },
+  'comic-mlodzi-tytani': {
+    type: 'comic',
+    cost: COMIC_UNLOCK_COST,
+    name: 'Młodzi Tytani',
+    image: 'images/comics/mlodzi-tytani.png',
+    previewPosition: '88% top',
+    meta: '60 stron',
+  },
+};
+
 let pendingDiscPurchase = null;
+let pendingContentPurchase = null;
+let purchaseMode = 'disc';
 
 function getUnlockedDiscIds() {
   try {
@@ -151,6 +192,210 @@ function refreshDiscClaimButton(discId) {
       lock.outerHTML = buildDiscLockHtml(discId);
     });
   });
+}
+
+function buildHubLockHtml(unlocked) {
+  const label = unlocked ? 'Odblokowane' : 'Zablokowane';
+  const mod = unlocked ? 'disc-card__lock--open' : 'disc-card__lock--closed';
+  const icon = unlocked
+    ? '<path d="M7 11V7a5 5 0 0 1 9.5-1M7 11h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  return `<span class="disc-card__lock content-hub__lock ${mod}" title="${label}" aria-label="${label}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">${icon}</svg></span>`;
+}
+
+function getUnlockedContentIds() {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_CONTENT_KEY);
+    const ids = raw ? JSON.parse(raw) : [];
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+}
+
+function isContentUnlocked(contentId) {
+  if (!contentId) return false;
+  return getUnlockedContentIds().includes(contentId);
+}
+
+function markContentUnlocked(contentId) {
+  if (!contentId) return;
+  const ids = getUnlockedContentIds();
+  if (ids.includes(contentId)) return;
+  ids.push(contentId);
+  localStorage.setItem(UNLOCKED_CONTENT_KEY, JSON.stringify(ids));
+  refreshContentHubCard(contentId);
+}
+
+function getContentLink(item) {
+  if (!item) return '';
+  if (item.link && /^https?:\/\//i.test(item.link)) return item.link;
+  const base = CONTENT_LINK_BASE;
+  if (!base || base === '#CONTENT_LINK_HERE' || !/^https?:\/\//i.test(base)) return '';
+  const trimmed = base.replace(/\/$/, '');
+  const ref = encodeURIComponent(item.id || 'content');
+  return `${trimmed}/${ref}`;
+}
+
+function getContentClaimLabel(type, unlocked) {
+  if (!unlocked) return 'Odbierz';
+  return type === 'game' ? 'Odbierz swoją grę' : 'Odbierz swój komiks';
+}
+
+function refreshContentHubCard(contentId) {
+  const item = CONTENT_HUB_ITEMS[contentId];
+  if (!item) return;
+  const unlocked = isContentUnlocked(contentId);
+  document.querySelectorAll(`[data-content-id="${contentId}"]`).forEach((card) => {
+    card.classList.toggle('content-hub__card--unlocked', unlocked);
+    card.dataset.contentLocked = unlocked ? '0' : '1';
+    const btn = card.querySelector('.content-hub__claim');
+    if (btn) btn.textContent = getContentClaimLabel(item.type, unlocked);
+    const lock = card.querySelector('.content-hub__lock');
+    if (lock) lock.outerHTML = buildHubLockHtml(unlocked);
+  });
+}
+
+function initContentHub() {
+  document.querySelectorAll('[data-content-id]').forEach((card) => {
+    const contentId = card.dataset.contentId;
+    if (!contentId) return;
+    refreshContentHubCard(contentId);
+    card.querySelector('.content-hub__claim')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openContentPurchase(contentId);
+    });
+  });
+}
+
+function updatePurchaseModalCost(cost) {
+  const costEl = document.querySelector('.disc-purchase__cost strong');
+  const confirmBtn = document.getElementById('disc-purchase-confirm');
+  if (costEl) costEl.textContent = String(cost);
+  if (confirmBtn) confirmBtn.textContent = `Odblokuj za ${cost} żetonów`;
+}
+
+function buildPurchasePreviewHtml({ image, type, previewPosition }) {
+  if (!image) return '<span class="disc-purchase__disc" aria-hidden="true"></span>';
+  const typeClass = type === 'game'
+    ? ' disc-purchase__photo--game'
+    : type === 'comic'
+      ? ' disc-purchase__photo--comic'
+      : ' disc-purchase__photo--disc';
+  const style = previewPosition ? ` style="object-position: ${previewPosition}"` : '';
+  return `<img src="${image}" alt="" class="disc-purchase__photo${typeClass}" loading="lazy"${style}>`;
+}
+
+function openContentPurchase(contentId) {
+  const item = CONTENT_HUB_ITEMS[contentId];
+  const modal = document.getElementById('disc-purchase-modal');
+  if (!item || !modal) return;
+
+  purchaseMode = 'content';
+  pendingContentPurchase = { id: contentId, ...item };
+  pendingDiscPurchase = null;
+
+  const heading = document.getElementById('disc-purchase-heading');
+  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
+  const title = document.getElementById('disc-purchase-title');
+  const preview = document.getElementById('disc-purchase-preview');
+  const balanceEl = document.getElementById('disc-purchase-balance');
+  const linkLabel = document.querySelector('.disc-purchase__link-label');
+  const claimBtn = document.getElementById('disc-purchase-claim');
+  const alreadyUnlocked = isContentUnlocked(contentId);
+  const typeLabel = item.type === 'game' ? 'grę' : 'komiks';
+
+  if (heading) heading.textContent = `Odbierz ${typeLabel}`;
+  if (title) title.textContent = item.name;
+  if (linkLabel) linkLabel.textContent = item.type === 'game' ? 'Link do gry' : 'Link do komiksu';
+  if (claimBtn) claimBtn.textContent = getContentClaimLabel(item.type, true);
+
+  if (preview) {
+    preview.innerHTML = buildPurchasePreviewHtml({
+      image: item.image,
+      type: item.type,
+      previewPosition: item.previewPosition,
+    });
+  }
+
+  if (alreadyUnlocked) {
+    showContentClaimStep(pendingContentPurchase);
+  } else {
+    resetPurchasePayStep();
+    if (subtitle) subtitle.textContent = `Odblokuj ${typeLabel} za żetony`;
+    if (balanceEl) balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
+    updatePurchaseModalCost(item.cost);
+  }
+
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  closeWalletDropdown();
+}
+
+function showContentClaimStep(item) {
+  const payStep = document.getElementById('disc-purchase-step-pay');
+  const claimStep = document.getElementById('disc-purchase-step-claim');
+  const linkInput = document.getElementById('disc-purchase-link');
+  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
+  const typeLabel = item.type === 'game' ? 'gra' : 'komiks';
+  const link = getContentLink(item);
+
+  if (payStep) payStep.hidden = true;
+  if (claimStep) claimStep.hidden = false;
+  if (subtitle) subtitle.textContent = `Twój ${typeLabel} jest gotowy do odebrania`;
+  if (linkInput) {
+    linkInput.value = link || '';
+    linkInput.placeholder = link ? '' : 'Link zostanie uzupełniony';
+  }
+}
+
+function confirmContentPurchase() {
+  if (!pendingContentPurchase) return;
+
+  const cost = pendingContentPurchase.cost;
+  const balance = getTokenBalance();
+  if (balance < cost) {
+    showToast(`Potrzebujesz ${cost} żetonów, aby odebrać ${pendingContentPurchase.type === 'game' ? 'grę' : 'komiks'}.`);
+    closeDiscPurchase();
+    openTokenShop();
+    return;
+  }
+
+  const newBalance = setTokenBalance(balance - cost);
+  updateTokenUI(newBalance);
+  updateInboxPricingBalance();
+  renderInboxPricingShop();
+  markContentUnlocked(pendingContentPurchase.id);
+  showContentClaimStep(pendingContentPurchase);
+  showToast(`Odblokowano za ${cost} żetonów. Stan: ${newBalance.toLocaleString('pl-PL')}`);
+}
+
+function claimContent() {
+  const item = pendingContentPurchase;
+  const link = getContentLink(item);
+  if (!link) {
+    showToast('Link nie jest jeszcze skonfigurowany.');
+    return;
+  }
+  window.open(link, '_blank', 'noopener,noreferrer');
+  closeDiscPurchase();
+  showToast(`Otwarto ${item?.name || 'zawartość'}.`);
+}
+
+function unlockContentViaAd() {
+  if (!pendingContentPurchase) return;
+
+  const adLink = getDiscAdLink();
+  if (adLink) {
+    window.open(adLink, '_blank', 'noopener,noreferrer');
+    showToast('Otwarto reklamę — po obejrzeniu odbierz zawartość poniżej.');
+  } else {
+    showToast('Link do reklamy zostanie uzupełniony wkrótce.');
+  }
+
+  markContentUnlocked(pendingContentPurchase.id);
+  showContentClaimStep(pendingContentPurchase);
 }
 
 function buildDiscLockHtml(discId) {
@@ -228,6 +473,26 @@ function bindAttachButton(button) {
 
 let profiles = [];
 
+// Zdjęcia profili w images/profiles/
+const PROFILE_AVATAR_BY_ID = {
+  1: 'natalia.png',
+  2: 'karolina.png',
+  3: 'monika.png',
+  4: 'weronika.png',
+  5: 'paulina.png',
+  6: 'magdalena.png',
+  7: 'zuzanna.png',
+  8: 'joanna.png',
+  9: 'patrycja.png',
+  10: 'aleksandra.png',
+};
+
+function getProfileAvatarPath(id) {
+  const file = PROFILE_AVATAR_BY_ID[id];
+  return file ? `images/profiles/${file}` : 'images/profiles/natalia.png';
+}
+window.getProfileAvatarPath = getProfileAvatarPath;
+
 const DEFAULT_PROFILES_DATA = [
   { id: 1, imie: 'Natalcia', wiek: 18, miasto: 'WARSZAWA', bio: 'Tak jestem altką', aktywnosci: 142, status: 'online' },
   { id: 2, imie: 'Wikaa_', wiek: 19, miasto: 'KRAKÓW', bio: 'Hejka;) Zapraszam.', aktywnosci: 89, status: 'online' },
@@ -248,7 +513,7 @@ function mapKolezankaToProfile(entry) {
     age: entry.wiek,
     city: entry.miasto,
     bio: entry.bio,
-    image: `images/kolezanki/${entry.id}/avatar.jpg`,
+    image: getProfileAvatarPath(entry.id),
     available: entry.status === 'online',
     aktywnosci: entry.aktywnosci ?? 0,
   };
@@ -268,14 +533,20 @@ async function loadProfiles() {
 }
 
 function handleProfileImageError(img) {
-  const wrap = img.closest('.profile-card__visual');
-  if (!wrap || wrap.querySelector('.profile-img__placeholder')) return;
+  const wrap = img.closest('.profile-card__img-wrap') || img.closest('.profile-card__visual');
+  if (!wrap) return;
   img.style.display = 'none';
-  const placeholder = document.createElement('div');
-  placeholder.className = 'profile-img__placeholder';
-  placeholder.setAttribute('aria-hidden', 'true');
-  placeholder.innerHTML = `${PERSON_ICON}<span>Zdjęcie wkrótce</span>`;
-  wrap.appendChild(placeholder);
+  const placeholder = wrap.querySelector('.profile-img__placeholder');
+  if (placeholder) {
+    placeholder.hidden = false;
+    placeholder.style.display = 'flex';
+    return;
+  }
+  const el = document.createElement('div');
+  el.className = 'profile-img__placeholder';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = `${PERSON_ICON}<span>Zdjęcie wkrótce</span>`;
+  wrap.appendChild(el);
 }
 window.handleProfileImageError = handleProfileImageError;
 
@@ -1059,14 +1330,25 @@ function bindDiscClaimButtons(container) {
   });
 }
 
-function resetDiscPurchaseModal() {
+function resetPurchasePayStep() {
   const payStep = document.getElementById('disc-purchase-step-pay');
   const claimStep = document.getElementById('disc-purchase-step-claim');
-  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
-
   if (payStep) payStep.hidden = false;
   if (claimStep) claimStep.hidden = true;
+}
+
+function resetDiscPurchaseModal() {
+  const subtitle = document.querySelector('#disc-purchase-modal .token-modal__subtitle');
+  const heading = document.getElementById('disc-purchase-heading');
+  const linkLabel = document.querySelector('.disc-purchase__link-label');
+  const claimBtn = document.getElementById('disc-purchase-claim');
+
+  resetPurchasePayStep();
   if (subtitle) subtitle.textContent = 'Odblokuj zawartość dysku za żetony';
+  if (heading) heading.textContent = 'Odbierz dysk';
+  if (linkLabel) linkLabel.textContent = 'Link do dysku';
+  if (claimBtn) claimBtn.textContent = 'Odbierz swój dysk';
+  updatePurchaseModalCost(DISC_UNLOCK_COST);
 }
 
 function showDiscClaimStep(item) {
@@ -1087,9 +1369,10 @@ function showDiscClaimStep(item) {
 
 async function copyDiscLink() {
   const input = document.getElementById('disc-purchase-link');
-  const link = input?.value || getDiscLink(pendingDiscPurchase);
+  const link = input?.value
+    || (purchaseMode === 'content' ? getContentLink(pendingContentPurchase) : getDiscLink(pendingDiscPurchase));
   if (!link) {
-    showToast('Link do dysku nie jest jeszcze skonfigurowany.');
+    showToast(purchaseMode === 'content' ? 'Link nie jest jeszcze skonfigurowany.' : 'Link do dysku nie jest jeszcze skonfigurowany.');
     return;
   }
   try {
@@ -1102,6 +1385,8 @@ async function copyDiscLink() {
 }
 
 function claimDisc() {
+  if (purchaseMode === 'content') return claimContent();
+
   const item = pendingDiscPurchase;
   const link = getDiscLink(item);
   if (!link) {
@@ -1115,6 +1400,7 @@ function claimDisc() {
 }
 
 function unlockDiscViaAd() {
+  if (purchaseMode === 'content') return unlockContentViaAd();
   if (!pendingDiscPurchase) return;
 
   const adLink = getDiscAdLink();
@@ -1133,19 +1419,26 @@ function openDiscPurchase(item) {
   const modal = document.getElementById('disc-purchase-modal');
   if (!modal) return;
 
+  purchaseMode = 'disc';
   pendingDiscPurchase = item;
+  pendingContentPurchase = null;
 
+  const heading = document.getElementById('disc-purchase-heading');
+  const linkLabel = document.querySelector('.disc-purchase__link-label');
+  const claimBtn = document.getElementById('disc-purchase-claim');
   const title = document.getElementById('disc-purchase-title');
   const preview = document.getElementById('disc-purchase-preview');
   const balanceEl = document.getElementById('disc-purchase-balance');
   const alreadyUnlocked = isDiscUnlocked(item.discId);
 
+  if (heading) heading.textContent = 'Odbierz dysk';
+  if (linkLabel) linkLabel.textContent = 'Link do dysku';
+  if (claimBtn) claimBtn.textContent = 'Odbierz swój dysk';
   if (title) title.textContent = item.discName;
+  updatePurchaseModalCost(DISC_UNLOCK_COST);
 
   if (preview) {
-    preview.innerHTML = item.image
-      ? `<img src="${item.image}" alt="" class="disc-purchase__photo" loading="lazy">`
-      : '<span class="disc-purchase__disc" aria-hidden="true"></span>';
+    preview.innerHTML = buildPurchasePreviewHtml({ image: item.image, type: 'disc' });
   }
 
   if (alreadyUnlocked) {
@@ -1168,10 +1461,13 @@ function closeDiscPurchase() {
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
   pendingDiscPurchase = null;
+  pendingContentPurchase = null;
+  purchaseMode = 'disc';
   resetDiscPurchaseModal();
 }
 
 function confirmDiscPurchase() {
+  if (purchaseMode === 'content') return confirmContentPurchase();
   if (!pendingDiscPurchase) return;
 
   const balance = getTokenBalance();
@@ -2460,6 +2756,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit(initWallet);
   safeInit(initProfileMenu);
   safeInit(initDiscPurchase);
+  safeInit(initContentHub);
   safeInit(initAccountPage);
   safeInit(initAccountSettingsPage);
   safeInit(initReferralPage);
