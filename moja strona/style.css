@@ -7333,6 +7333,41 @@ button.profile-card__btn--chat {
   margin-bottom: 0;
 }
 
+.end-modal__affiliate {
+  margin-top: 1.35rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.end-modal__affiliate[hidden] {
+  display: none;
+}
+
+.end-modal__affiliate-text {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.end-modal__affiliate-text strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.end-modal__affiliate-btn {
+  margin-bottom: 0.75rem !important;
+  text-decoration: none;
+}
+
+.end-modal__affiliate-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--accent-soft, var(--accent));
+  font-weight: 500;
+}
+
 @media (max-width: 768px) {
   .page-chat .app-main {
     margin-left: 0 !important;

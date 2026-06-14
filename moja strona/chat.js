@@ -10,6 +10,21 @@ const EXTENSION_COST = 30;
 const PHOTO_UNLOCK_COST = 20;
 const ROSE_GIFT_COST = 15;
 const ROSE_GIFT_SRC = 'images/gifts/rose.gif';
+
+/** Linki afiliacyjne — kontynuacja rozmowy po zakończeniu czasu (modal) */
+const KOLEZANKA_AFFILIATE_LINKS = {
+  1: 'https://safeoffers.pro/a/L9rgnHYGPWTjJzP', // Natalcia
+  2: 'https://safeoffers.pro/a/J6pZluQvGzfv7ZO', // Wikaa_
+  3: 'https://safeoffers.pro/a/wpLjZsRQoQt1z2x', // Monikapv
+  4: 'https://safeoffers.pro/a/NkwxpCjZBKSrW5r', // Weronikaaa
+  5: 'https://safeoffers.pro/a/jRr2LcyJgJH1q3W', // Oliwia<3
+  6: 'https://safeoffers.pro/a/zpOm9smZlBtorDK', // Karolcia09_
+  7: 'https://safeoffers.pro/a/J6pZluQvmGIv9PG', // Zuzaa08
+  8: 'https://safeoffers.pro/a/Z6M4puQ7NZsx82J', // Zosia_08
+  9: 'https://safeoffers.pro/a/XDK6nuM8nQhm8ZM', // Majaa.
+  10: 'https://safeoffers.pro/a/XDK6nuMRyvhm8Zr', // Domi_nika
+};
+
 const PHOTO_TAG = '[SEND_PHOTO]';
 const PRICING_TAG = '[SHOW_PRICING]';
 const TOPUP_TAG = '[SHOW_TOPUP]';
@@ -1157,6 +1172,30 @@ function enableComposer() {
   });
 }
 
+function getKolezankaAffiliateUrl(profileId) {
+  if (!profileId) return null;
+  return KOLEZANKA_AFFILIATE_LINKS[profileId] || null;
+}
+
+function updateExtensionAffiliateBlock() {
+  const block = document.getElementById('chat-extension-affiliate');
+  const nameEl = document.getElementById('chat-extension-affiliate-name');
+  const linkEl = document.getElementById('chat-extension-affiliate-link');
+  if (!block || !nameEl || !linkEl) return;
+
+  const name = kolezanka?.imie || kolezanka?.name || '';
+  const url = getKolezankaAffiliateUrl(kolezankaId);
+
+  if (!url || !name) {
+    block.hidden = true;
+    return;
+  }
+
+  nameEl.textContent = name;
+  linkEl.href = url;
+  block.hidden = false;
+}
+
 function showExtensionModal() {
   disableComposer('Czas minął — doładuj żetony');
 
@@ -1176,6 +1215,8 @@ function showExtensionModal() {
   if (balanceEl && typeof getTokenBalance === 'function') {
     balanceEl.textContent = getTokenBalance().toLocaleString('pl-PL');
   }
+
+  updateExtensionAffiliateBlock();
 
   if (modal) {
     modal.hidden = false;
