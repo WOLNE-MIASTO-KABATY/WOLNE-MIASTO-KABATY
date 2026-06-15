@@ -8,7 +8,15 @@ const SEGMENT_ANGLE = 360 / SEGMENT_COUNT;
 const SPIN_DURATION_MS = 4500;
 
 /** Kolejność segmentów — musi być identyczna jak PRIZE_SEGMENTS w daily-spin.js */
-const WHEEL_LABELS = ['Nic', '5 żetonów', '35 żetonów', '100 żetonów', '200 żetonów'];
+const WHEEL_SEGMENTS = [
+  { label: 'Nic', colors: ['#1e293b', '#334155'], text: '#e2e8f0' },
+  { label: '5 żetonów', colors: ['#a16207', '#facc15'], text: '#1c1917' },
+  { label: '35 żetonów', colors: ['#6b21a8', '#c084fc'], text: '#fff' },
+  { label: '100 żetonów', colors: ['#c2410c', '#fb923c'], text: '#fff' },
+  { label: '200 żetonów', colors: ['#15803d', '#4ade80'], text: '#052e16' },
+];
+
+const WHEEL_LABELS = WHEEL_SEGMENTS.map((s) => s.label);
 
 let spinState = {
   canSpin: false,
@@ -62,13 +70,10 @@ function updateCountdownUI() {
   const loggedIn = isLoggedIn();
 
   if (guest) guest.hidden = loggedIn;
+  if (btn) btn.hidden = !loggedIn;
 
   if (!loggedIn) {
     if (el) el.textContent = 'Zaloguj się, aby zakręcić kołem fortuny';
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Zaloguj się';
-    }
     return;
   }
 
@@ -144,15 +149,20 @@ function angleForSegment(segmentIndex) {
 
 function animateWheelToSegment(segmentIndex) {
   const wheel = document.getElementById('spin-wheel');
+  const frame = document.querySelector('.spin-wheel-frame');
   if (!wheel) return Promise.resolve();
 
   const target = angleForSegment(segmentIndex);
   spinState.currentRotation = target;
-  wheel.style.transition = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+  frame?.classList.add('is-spinning');
+  wheel.style.transition = `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.15, 0.85, 0.2, 1)`;
   wheel.style.transform = `rotate(${target}deg)`;
 
   return new Promise((resolve) => {
-    setTimeout(resolve, SPIN_DURATION_MS + 100);
+    setTimeout(() => {
+      frame?.classList.remove('is-spinning');
+      resolve();
+    }, SPIN_DURATION_MS + 100);
   });
 }
 
@@ -223,13 +233,90 @@ async function performSpin() {
   }
 }
 
-function buildWheelLabels() {
-  const container = document.getElementById('spin-wheel-labels');
-  if (!container) return;
+function polar(cx, cy, r, deg) {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
 
-  container.innerHTML = WHEEL_LABELS.map((label, i) => {
-    const rot = i * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
-    return `<span class="spin-wheel__label" style="--label-rot:${rot}deg">${label}</span>`;
+function describeSlice(cx, cy, r, startDeg, endDeg) {
+  const start = polar(cx, cy, r, endDeg);
+  const end = polar(cx, cy, r, startDeg);
+  const large = endDeg - startDeg <= 180 ? 0 : 1;
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${large} 0 ${end.x} ${end.y} Z`;
+}
+
+function buildWheelSvg() {
+  const wheel = document.getElementById('spin-wheel');
+  if (!wheel) return;
+
+  const cx = 200;
+  const cy = 200;
+  const r = 188;
+  const textR = 122;
+
+  const gradients = WHEEL_SEGMENTS.map((seg, i) => {
+    const [c0, c1] = seg.colors;
+    return `
+      <linearGradient id="grad-${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${c0}"/>
+        <stop offset="100%" stop-color="${c1}"/>
+      </linearGradient>
+    `;
+  }).join('');
+
+  const slices = WHEEL_SEGMENTS.map((seg, i) => {
+    const start = i * SEGMENT_ANGLE - SEGMENT_ANGLE / 2;
+    const end = start + SEGMENT_ANGLE;
+    const mid = start + SEGMENT_ANGLE / 2;
+    const path = describeSlice(cx, cy, r, start, end);
+    const tp = polar(cx, cy, textR, mid);
+    const flip = mid > 90 && mid < 270;
+    const textRot = flip ? mid + 180 : mid;
+    const fontSize = seg.label.length > 9 ? 17 : seg.label.length > 6 ? 19 : 22;
+
+    return `
+      <g class="spin-wheel__slice">
+        <path d="${path}" fill="url(#grad-${i})" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <text
+          x="${tp.x}"
+          y="${tp.y}"
+          fill="${seg.text}"
+          font-size="${fontSize}"
+          font-weight="700"
+          font-family="Outfit, system-ui, sans-serif"
+          stroke="rgba(0,0,0,0.25)"
+          stroke-width="0.8"
+          paint-order="stroke fill"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          transform="rotate(${textRot}, ${tp.x}, ${tp.y})"
+        >${seg.label}</text>
+      </g>
+    `;
+  }).join('');
+
+  wheel.innerHTML = `
+    <svg class="spin-wheel__svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <filter id="wheel-inner-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/>
+        </filter>
+        ${gradients}
+      </defs>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="#0f172a" filter="url(#wheel-inner-shadow)"/>
+      ${slices}
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+    </svg>
+  `;
+}
+
+function buildWheelLeds() {
+  const ring = document.getElementById('spin-wheel-leds');
+  if (!ring) return;
+  const count = 32;
+  ring.innerHTML = Array.from({ length: count }, (_, i) => {
+    const rot = (360 / count) * i;
+    return `<span class="spin-wheel-led" style="--led-rot:${rot}deg;--led-delay:${(i % 4) * 0.15}s"></span>`;
   }).join('');
 }
 
@@ -248,7 +335,8 @@ function bindSpinUI() {
 }
 
 async function initDailySpin() {
-  buildWheelLabels();
+  buildWheelSvg();
+  buildWheelLeds();
   bindSpinUI();
   updateCountdownUI();
 

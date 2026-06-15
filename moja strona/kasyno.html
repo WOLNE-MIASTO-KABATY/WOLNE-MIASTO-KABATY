@@ -148,21 +148,27 @@
 
             <div class="casino-page__wheel-area">
               <div class="spin-wheel-wrap">
-                <div class="spin-wheel__pointer" aria-hidden="true"></div>
-                <div class="spin-wheel" id="spin-wheel">
-                  <div class="spin-wheel__labels" id="spin-wheel-labels"></div>
+                <div class="spin-wheel-frame">
+                  <div class="spin-wheel-leds" id="spin-wheel-leds" aria-hidden="true"></div>
+                  <div class="spin-wheel-rim" aria-hidden="true"></div>
+                  <div class="spin-wheel" id="spin-wheel"></div>
+                  <div class="spin-wheel__pointer" aria-hidden="true">
+                    <span class="spin-wheel__pointer-cap"></span>
+                  </div>
+                  <div class="spin-wheel__hub" aria-hidden="true">
+                    <span class="spin-wheel__hub-inner">◆</span>
+                  </div>
                 </div>
-                <div class="spin-wheel__hub" aria-hidden="true"></div>
               </div>
 
               <p class="spin-countdown" id="spin-countdown">Sprawdzanie dostępności spinu…</p>
 
-              <div class="spin-guest-hint" id="spin-guest-hint" hidden>
+              <div class="spin-guest-hint" id="spin-guest-hint">
                 <p>Zaloguj się, aby zakręcić kołem i wygrać żetony.</p>
                 <button type="button" class="btn btn--primary" id="spin-login-btn">Zaloguj się</button>
               </div>
 
-              <button type="button" class="btn btn--primary btn--spin" id="spin-button" disabled>Zakręć kołem</button>
+              <button type="button" class="btn btn--primary btn--spin" id="spin-button" hidden disabled>Zakręć kołem</button>
 
               <p class="spin-result" id="spin-result" hidden></p>
             </div>
