@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DyskiHub.pl — czat AI">
-  <title>DyskiHub.pl — Czat</title>
+  <meta name="description" content="DyskiHub.pl — Koło fortuny. Wygraj darmowe żetony co 24h.">
+  <title>DyskiHub.pl — Kasyno</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-chat">
+<body class="page-casino">
   <div class="app-shell" id="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__head">
@@ -22,7 +22,7 @@
         </div>
         <a href="index.html#hero" class="sidebar__logo">
           <span class="sidebar__logo-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-chat)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-chat" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
+            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-casino)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-casino" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
           </span>
           <span class="sidebar__logo-text">DyskiHub.pl</span>
         </a>
@@ -47,7 +47,7 @@
       </div>
 
       <nav class="sidebar__nav" id="nav">
-        <a href="index.html#profiles" class="sidebar__link is-active" title="Profile">
+        <a href="index.html#profiles" class="sidebar__link" title="Profile">
           <span class="sidebar__link-icon sidebar__link-icon--profiles" aria-hidden="true">♥</span>
           <span class="sidebar__link-text">Profile</span>
         </a>
@@ -75,7 +75,7 @@
           <span class="sidebar__link-icon sidebar__link-icon--contact" aria-hidden="true">@</span>
           <span class="sidebar__link-text">Kontakt</span>
         </a>
-        <a href="kasyno.html" class="sidebar__link" title="Kasyno">
+        <a href="kasyno.html" class="sidebar__link is-active" title="Kasyno">
           <span class="sidebar__link-icon sidebar__link-icon--casino" aria-hidden="true">🎰</span>
           <span class="sidebar__link-text">Kasyno</span>
         </a>
@@ -107,7 +107,7 @@
       </div>
     </aside>
 
-    <div class="app-main app-main--chat">
+    <div class="app-main">
       <header class="topbar">
         <div class="topbar__left">
           <button class="nav-toggle" id="nav-toggle" aria-label="Otwórz menu" aria-expanded="false">
@@ -136,43 +136,38 @@
         </div>
       </header>
 
-      <div class="app-main__scroll app-main__scroll--chat">
-        <div class="page-center page-center--chat">
-          <section class="ai-chat-page" id="ai-chat-page">
-            <div class="ai-chat-panel" id="ai-chat-panel">
-              <header class="ai-chat-header">
-                <a href="index.html#profiles" class="ai-chat-header__back" aria-label="Wróć do profili">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                  <span class="ai-chat-header__back-text">Wróć</span>
-                </a>
-                <div class="ai-chat-header__profile">
-                  <img src="" alt="" class="ai-chat-header__avatar" id="chat-avatar" width="44" height="44">
-                  <div class="ai-chat-header__info">
-                    <span class="ai-chat-header__name" id="chat-name">…</span>
-                    <span class="ai-chat-header__status"><span class="profile-card__online"></span> Online</span>
-                  </div>
+      <div class="app-main__scroll">
+        <div class="page-center">
+          <section class="casino-page" id="casino-page">
+            <a href="index.html" class="casino-page__back">← Wróć na stronę główną</a>
+
+            <header class="casino-page__header">
+              <h1 class="casino-page__title">Koło fortuny</h1>
+              <p class="casino-page__subtitle">Zakręć raz na 24 godziny i wygraj darmowe żetony. Tylko dla zalogowanych użytkowników.</p>
+            </header>
+
+            <div class="casino-page__wheel-area">
+              <div class="spin-wheel-wrap">
+                <div class="spin-wheel__pointer" aria-hidden="true"></div>
+                <div class="spin-wheel" id="spin-wheel">
+                  <div class="spin-wheel__labels" id="spin-wheel-labels"></div>
                 </div>
-              </header>
-
-              <div class="ai-chat-messages" id="chat-messages" aria-live="polite"></div>
-
-              <div class="ai-chat-typing" id="chat-typing" hidden>
-                <span class="ai-chat-typing__dots"><span></span><span></span><span></span></span>
+                <div class="spin-wheel__hub" aria-hidden="true"></div>
               </div>
 
-              <footer class="ai-chat-composer">
-                <button type="button" class="ai-chat-composer__attach" disabled aria-label="Załącz plik (wkrótce)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                </button>
-                <button type="button" class="ai-chat-composer__gift" id="chat-gift" aria-label="Wyślij wirtualną różę (15 żetonów)">
-                  <img src="images/gifts/rose.gif" alt="" class="composer-gift-icon" width="22" height="22">
-                </button>
-                <input type="text" class="ai-chat-composer__input" id="chat-input" placeholder="Napisz wiadomość..." autocomplete="off">
-                <button type="button" class="ai-chat-composer__send" id="chat-send" aria-label="Wyślij">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                </button>
-              </footer>
+              <p class="spin-countdown" id="spin-countdown">Sprawdzanie dostępności spinu…</p>
+
+              <div class="spin-guest-hint" id="spin-guest-hint" hidden>
+                <p>Zaloguj się, aby zakręcić kołem i wygrać żetony.</p>
+                <button type="button" class="btn btn--primary" id="spin-login-btn">Zaloguj się</button>
+              </div>
+
+              <button type="button" class="btn btn--primary btn--spin" id="spin-button" disabled>Zakręć kołem</button>
+
+              <p class="spin-result" id="spin-result" hidden></p>
             </div>
+
+            <p class="casino-page__disclaimer">Jeden spin na dobę. Nagrody losowane po stronie serwera.</p>
           </section>
         </div>
       </div>
@@ -181,84 +176,28 @@
 
   <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
 
-  <div class="end-modal" id="chat-extension-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="chat-extension-title">
-    <div class="end-modal-overlay"></div>
-    <div class="end-modal__panel">
-      <h2 class="end-modal__title" id="chat-extension-title">Czas rozmowy minął</h2>
-      <p class="end-modal__text" id="chat-extension-text">Twój czas rozmowy dobiegł końca. Aby kontynuować czat, doładuj żetony i przedłuż rozmowę o 10 minut (30 żetonów).</p>
-      <p class="end-modal__balance">Twój stan: <strong id="chat-extension-balance">0</strong> żetonów</p>
-      <button type="button" class="btn btn--primary btn--full" id="chat-extension-extend">Przedłuż o 10 min (30 żetonów)</button>
-      <button type="button" class="btn btn--ghost btn--full" id="chat-extension-topup">Doładuj żetony</button>
-      <button type="button" class="btn btn--ghost btn--full" id="chat-extension-close">Zamknij</button>
-
-      <div class="end-modal__affiliate" id="chat-extension-affiliate" hidden>
-        <p class="end-modal__affiliate-text">
-          Lub kontynuuj rozmowę z <strong id="chat-extension-affiliate-name">…</strong>
-        </p>
-        <a href="#" class="btn btn--primary btn--full end-modal__affiliate-btn" id="chat-extension-affiliate-link" target="_blank" rel="noopener noreferrer">Tutaj</a>
-        <p class="end-modal__affiliate-hint">Dołącz i kontynuuj rozmowę bez żadnych limitów!</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="token-modal" id="chat-pricing-modal" aria-hidden="true" role="dialog" aria-labelledby="chat-pricing-title" hidden>
-    <div class="token-modal__backdrop" id="chat-pricing-backdrop"></div>
-    <div class="token-modal__panel">
-      <header class="token-modal__header">
-        <div>
-          <h2 class="token-modal__title" id="chat-pricing-title">Cennik</h2>
-          <p class="token-modal__subtitle">Usługi premium w czacie</p>
-        </div>
-        <button type="button" class="token-modal__close" id="chat-pricing-close" aria-label="Zamknij">&times;</button>
-      </header>
-      <p class="token-modal__balance">Twój stan: <strong id="chat-pricing-balance">0</strong> żetonów</p>
-      <div class="inbox-pricing__shop" id="chat-pricing-shop"></div>
-    </div>
-  </div>
-
-  <div class="token-modal" id="chat-topup-modal" aria-hidden="true" role="dialog" aria-labelledby="chat-topup-title" hidden>
-    <div class="token-modal__backdrop" id="chat-topup-backdrop"></div>
-    <div class="token-modal__panel">
-      <header class="token-modal__header">
-        <div>
-          <h2 class="token-modal__title" id="chat-topup-title">Jak doładować żetony</h2>
-          <p class="token-modal__subtitle">Wybierz metodę płatności</p>
-        </div>
-        <button type="button" class="token-modal__close" id="chat-topup-close" aria-label="Zamknij">&times;</button>
-      </header>
-      <p class="chat-topup__desc">Żetony odblokowują zdjęcia, przedłużają rozmowę i dają dostęp do usług premium. Możesz doładować konto płatnością kryptowalutą lub przez Discord.</p>
-      <div class="chat-topup__options">
-        <a href="#" class="btn btn--primary btn--full chat-topup__option" id="chat-topup-crypto" target="_blank" rel="noopener noreferrer">Płatność krypto</a>
-        <a href="#" class="btn btn--ghost btn--full chat-topup__option" id="chat-topup-discord" target="_blank" rel="noopener noreferrer">Doładowanie przez Discord</a>
-      </div>
-      <p class="token-modal__note">Linki do płatności zostaną uzupełnione wkrótce.</p>
-    </div>
-  </div>
-
   <div class="token-modal auth-modal" id="auth-modal" aria-hidden="true" role="dialog" aria-labelledby="auth-modal-title">
     <div class="token-modal__backdrop" id="auth-modal-backdrop"></div>
     <div class="token-modal__panel auth-modal__panel">
       <header class="token-modal__header">
         <div>
           <h2 class="token-modal__title" id="auth-modal-title">Konto</h2>
-          <p class="token-modal__subtitle auth-modal__subtitle" id="auth-modal-subtitle">Nazwa użytkownika (krótka), e-mail i hasło — załóż konto na DyskiHub.pl.</p>
+          <p class="token-modal__subtitle">Zaloguj się lub utwórz konto</p>
         </div>
         <button type="button" class="token-modal__close" id="auth-modal-close" aria-label="Zamknij">&times;</button>
       </header>
-      <div class="auth-modal__tabs" role="tablist" aria-label="Typ konta">
-        <button type="button" class="auth-modal__tab is-active" id="auth-tab-register" role="tab" aria-selected="true" aria-controls="auth-panel-register" data-auth-tab="register">Załóż konto</button>
-        <button type="button" class="auth-modal__tab" id="auth-tab-login" role="tab" aria-selected="false" aria-controls="auth-panel-login" data-auth-tab="login">Zaloguj się</button>
+      <div class="auth-modal__tabs" role="tablist">
+        <button type="button" class="auth-modal__tab is-active" id="auth-tab-register" role="tab" aria-selected="true" aria-controls="auth-panel-register">Rejestracja</button>
+        <button type="button" class="auth-modal__tab" id="auth-tab-login" role="tab" aria-selected="false" aria-controls="auth-panel-login">Logowanie</button>
       </div>
       <div class="auth-modal__body" id="auth-panel-register" role="tabpanel" aria-labelledby="auth-tab-register">
         <form class="register-form" id="register-form" novalidate>
-          <label class="register-form__label" for="reg-username">Nazwa użytkownika</label>
-          <input class="register-form__input" type="text" id="reg-username" name="username" placeholder="np. wiktoria (krótka nazwa, nie e-mail)" autocomplete="username" maxlength="32" required>
-          <label class="register-form__label" for="reg-email">E-mail</label>
-          <input class="register-form__input" type="email" id="reg-email" name="email" placeholder="twoj@email.pl" autocomplete="email" maxlength="254" required>
-          <label class="register-form__label" for="reg-password">Hasło</label>
-          <input class="register-form__input" type="password" id="reg-password" name="password" placeholder="Hasło" autocomplete="new-password" required>
-          <label class="register-form__label" for="reg-password-confirm">Powtórz hasło</label>
-          <input class="register-form__input" type="password" id="reg-password-confirm" name="passwordConfirm" placeholder="Ponownie" autocomplete="new-password" required>
+          <label class="register-form__label" for="register-username">Login</label>
+          <input class="register-form__input" type="text" id="register-username" name="username" placeholder="np. Jan_Kowalski" autocomplete="username" required>
+          <label class="register-form__label" for="register-email">E-mail</label>
+          <input class="register-form__input" type="email" id="register-email" name="email" placeholder="jan@example.com" autocomplete="email" required>
+          <label class="register-form__label" for="register-password">Hasło</label>
+          <input class="register-form__input" type="password" id="register-password" name="password" placeholder="Min. 6 znaków" autocomplete="new-password" required>
           <p class="register-form__error" id="register-error" hidden></p>
           <button type="submit" class="btn btn--primary btn--full">Utwórz konto</button>
         </form>
@@ -295,20 +234,9 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <div class="end-modal" id="rose-gift-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="rose-gift-title">
-    <div class="end-modal-overlay" id="rose-gift-overlay"></div>
-    <div class="end-modal__panel">
-      <h2 class="end-modal__title" id="rose-gift-title">Wirtualna róża</h2>
-      <p class="end-modal__text" id="rose-gift-text">Czy na pewno chcesz podarować wirtualną różę?</p>
-      <button type="button" class="btn btn--primary btn--full" id="rose-gift-confirm">Tak, wyślij</button>
-      <button type="button" class="btn btn--ghost btn--full" id="rose-gift-cancel">Nie</button>
-    </div>
-  </div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="auth.js"></script>
-  <script src="data/prompts.js"></script>
   <script src="script.js"></script>
-  <script src="chat.js"></script>
+  <script src="spin.js"></script>
 </body>
 </html>

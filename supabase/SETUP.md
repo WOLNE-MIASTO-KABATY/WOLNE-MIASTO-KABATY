@@ -71,3 +71,13 @@ Lokalnie uruchom `netlify dev` w katalogu repo (wymaga zmiennych z `.env.example
 - Użytkownik może **tylko odejmować** żetony (`spend_tokens` RPC)
 - Doładowanie pakietów i nadawanie przez admina idzie przez **Netlify Functions** (service role)
 - Nie udostępniaj `SUPABASE_SERVICE_ROLE_KEY` w frontendzie
+
+## 10. Daily Spin (Koło fortuny)
+
+Po wdrożeniu funkcji `daily-spin` uruchom migrację kolumny cooldown:
+
+1. **SQL Editor** → **New query**
+2. Wklej zawartość [`migration-daily-spin.sql`](./migration-daily-spin.sql)
+3. Kliknij **Run**
+
+Kolumna `profiles.last_daily_spin_at` jest wymagana do cooldownu 24h między spinami.

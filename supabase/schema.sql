@@ -10,6 +10,7 @@ create table if not exists public.profiles (
   is_admin boolean not null default false,
   referred_by text,
   banned boolean not null default false,
+  last_daily_spin_at timestamptz,
   created_at timestamptz not null default now(),
   constraint profiles_username_unique unique (username),
   constraint profiles_email_unique unique (email)

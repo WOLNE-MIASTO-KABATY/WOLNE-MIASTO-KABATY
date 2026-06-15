@@ -2123,6 +2123,7 @@ async function handleLoginSubmit(e) {
     showToast(`Witaj ponownie, ${user?.username || ''}!`);
     closeRegisterPanel();
     closeSidebarMenu();
+    window.dispatchEvent(new Event('dyskihub-auth'));
   } catch (err) {
     showLoginError(err.message || 'Nieprawidłowy login lub hasło.');
   } finally {
@@ -2191,6 +2192,7 @@ async function handleRegisterSubmit(e) {
     showToast(`Witaj, ${username}! Konto zostało utworzone.`);
     closeRegisterPanel();
     closeSidebarMenu();
+    window.dispatchEvent(new Event('dyskihub-auth'));
   } catch (err) {
     showRegisterError(err.message || 'Nie udało się utworzyć konta.');
   } finally {
