@@ -24,6 +24,8 @@ let spinState = {
   secondsRemaining: 0,
   spinning: false,
   currentRotation: 0,
+  statusLoaded: false,
+  statusError: null,
 };
 
 let countdownTimer = null;
@@ -36,16 +38,32 @@ async function spinFetch(method) {
   const token = window.DyskiAuth?.getAccessToken?.();
   if (!token) throw new Error('Zaloguj się, aby kręcić kołem');
 
-  const res = await fetch(SPIN_API, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: method === 'POST' ? '{}' : undefined,
-  });
+  let res;
+  try {
+    res = await fetch(SPIN_API, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: method === 'POST' ? '{}' : undefined,
+    });
+  } catch {
+    throw new Error('Brak połączenia z serwerem spinu. Sprawdź internet i spróbuj ponownie.');
+  }
 
-  const data = await res.json();
+  const contentType = res.headers.get('content-type') || '';
+  let data = {};
+  if (contentType.includes('application/json')) {
+    data = await res.json();
+  } else {
+    throw new Error(
+      res.status === 404
+        ? 'Funkcja koła fortuny nie jest dostępna na tym serwerze.'
+        : 'Nieprawidłowa odpowiedź serwera spinu.'
+    );
+  }
+
   if (!res.ok) {
     const err = new Error(data.error || 'Błąd koła fortuny');
     err.status = res.status;
@@ -77,6 +95,24 @@ function updateCountdownUI() {
     return;
   }
 
+  if (spinState.statusError && !spinState.spinning) {
+    if (el) el.textContent = spinState.statusError;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Spróbuj ponownie';
+    }
+    return;
+  }
+
+  if (!spinState.statusLoaded && !spinState.spinning) {
+    if (el) el.textContent = 'Sprawdzanie dostępności spinu…';
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Zakręć kołem';
+    }
+    return;
+  }
+
   if (spinState.canSpin && !spinState.spinning) {
     if (el) el.textContent = 'Masz dostępny dzisiejszy spin!';
     if (btn) {
@@ -97,17 +133,18 @@ function updateCountdownUI() {
     return;
   }
 
-  if (el) el.textContent = 'Sprawdzanie dostępności spinu…';
-  if (btn) btn.disabled = true;
+  if (el) el.textContent = 'Nie udało się ustalić dostępności spinu.';
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = 'Spróbuj ponownie';
+  }
 }
 
 function startCountdownTicker() {
   clearInterval(countdownTimer);
   countdownTimer = setInterval(() => {
-    if (spinState.canSpin || !spinState.nextSpinAt) {
-      updateCountdownUI();
-      return;
-    }
+    if (!spinState.nextSpinAt) return;
+
     const remaining = Math.ceil((new Date(spinState.nextSpinAt).getTime() - Date.now()) / 1000);
     spinState.secondsRemaining = Math.max(0, remaining);
     if (spinState.secondsRemaining <= 0) {
@@ -122,23 +159,33 @@ function applyStatus(data) {
   spinState.canSpin = Boolean(data.canSpin);
   spinState.nextSpinAt = data.nextSpinAt || null;
   spinState.secondsRemaining = data.secondsRemaining || 0;
+  spinState.statusLoaded = true;
+  spinState.statusError = null;
   updateCountdownUI();
 }
 
 async function refreshSpinStatus() {
   if (!isLoggedIn()) {
     spinState.canSpin = false;
+    spinState.statusLoaded = false;
+    spinState.statusError = null;
     updateCountdownUI();
     return;
   }
+
+  spinState.statusLoaded = false;
+  spinState.statusError = null;
+  updateCountdownUI();
 
   try {
     const data = await spinFetch('GET');
     applyStatus(data);
   } catch (err) {
     console.error(err);
-    const el = document.getElementById('spin-countdown');
-    if (el) el.textContent = err.message || 'Nie udało się sprawdzić statusu spinu';
+    spinState.statusLoaded = true;
+    spinState.statusError = err.message || 'Nie udało się sprawdzić statusu spinu';
+    spinState.canSpin = false;
+    updateCountdownUI();
   }
 }
 
@@ -326,6 +373,10 @@ function bindSpinUI() {
       if (typeof openAuthModal === 'function') openAuthModal('login');
       return;
     }
+    if (spinState.statusError) {
+      refreshSpinStatus();
+      return;
+    }
     performSpin();
   });
 
@@ -343,6 +394,9 @@ async function initDailySpin() {
   if (window.DyskiAuth) {
     try {
       await window.DyskiAuth.initAuth();
+      if (isLoggedIn()) {
+        await window.DyskiAuth.loadProfile();
+      }
     } catch (err) {
       console.error(err);
     }
@@ -354,9 +408,16 @@ async function initDailySpin() {
   await refreshSpinStatus();
   startCountdownTicker();
 
-  window.addEventListener('dyskihub-auth', () => {
+  window.addEventListener('dyskihub-auth', async () => {
     if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
     if (typeof updateRegisterUI === 'function') updateRegisterUI();
+    if (window.DyskiAuth) {
+      try {
+        await window.DyskiAuth.loadProfile();
+      } catch (err) {
+        console.error(err);
+      }
+    }
     refreshSpinStatus();
   });
 }

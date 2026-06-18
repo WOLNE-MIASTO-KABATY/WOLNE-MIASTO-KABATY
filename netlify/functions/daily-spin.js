@@ -83,16 +83,27 @@ function computeSpinStatus(lastSpinAt) {
 
 async function fetchProfile(userId) {
   const supabaseUrl = getSupabaseUrl();
-  const headers = getServiceHeaders();
+  const headers = { ...getServiceHeaders(), Accept: 'application/json' };
 
-  const res = await fetch(
+  let res = await fetch(
     `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,tokens,last_daily_spin_at&limit=1`,
-    { headers: { ...headers, Accept: 'application/json' } }
+    { headers }
   );
+
+  if (!res.ok) {
+    res = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,tokens&limit=1`,
+      { headers }
+    );
+  }
 
   if (!res.ok) throw new Error('profile_fetch_failed');
   const rows = await res.json();
-  return rows[0] || null;
+  const profile = rows[0] || null;
+  if (profile && profile.last_daily_spin_at === undefined) {
+    profile.last_daily_spin_at = null;
+  }
+  return profile;
 }
 
 exports.handler = async (event) => {

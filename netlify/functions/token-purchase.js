@@ -6,9 +6,12 @@ const {
 } = require('./_lib/admin-auth');
 
 const PACKS = {
+  'pack-20': 20,
   'pack-50': 50,
   'pack-120': 140,
-  'pack-300': 350,
+  'pack-300': 310,
+  'pack-600': 625,
+  'pack-1200': 1150,
 };
 
 async function verifyUserToken(event) {

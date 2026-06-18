@@ -16,9 +16,12 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_.\-\u00C0-\u024F]{3,32}$/;
 const USERNAME_MAX_LEN = 32;
 
 const TOKEN_PACKAGES = [
-  { id: 'pack-50', tokens: 50, bonusTokens: 0, price: '19,99 zł', popular: false },
-  { id: 'pack-120', tokens: 120, bonusTokens: 20, price: '39,99 zł', popular: true, bonus: '+20 żetonów gratis' },
-  { id: 'pack-300', tokens: 300, bonusTokens: 50, price: '79,99 zł', popular: false, bonus: '+50 żetonów gratis' },
+  { id: 'pack-20', tokens: 20, bonusTokens: 0, price: '10,00 zł', popular: false },
+  { id: 'pack-50', tokens: 50, bonusTokens: 0, price: '20,00 zł', popular: false },
+  { id: 'pack-120', tokens: 120, bonusTokens: 20, price: '40,00 zł', popular: true, bonus: '+20 żetonów gratis' },
+  { id: 'pack-300', tokens: 280, bonusTokens: 30, price: '99,00 zł', popular: false, bonus: '+30 żetonów gratis' },
+  { id: 'pack-600', tokens: 550, bonusTokens: 75, price: '199,00 zł', popular: false, bonus: '+75 żetonów gratis' },
+  { id: 'pack-1200', tokens: 1000, bonusTokens: 150, price: '349,00 zł', popular: false, bestValue: true, bonus: '+150 żetonów gratis' },
 ];
 
 /** Linki doładowania żetonów — podmień po integracji płatności */
@@ -1169,11 +1172,76 @@ function setTokenBalance(amount) {
   return 0;
 }
 
-function updateTokenUI(balance) {
-  const formatted = balance.toLocaleString('pl-PL');
-  document.querySelectorAll('#token-balance, #token-balance-dropdown, #token-balance-modal').forEach((el) => {
-    if (el) el.textContent = formatted;
+const TOKEN_BALANCE_SELECTORS = '#token-balance, #token-balance-dropdown, #token-balance-modal, #inbox-pricing-balance, #account-tokens, #coinflip-balance';
+
+function getTokenBalanceElements() {
+  return [...document.querySelectorAll(TOKEN_BALANCE_SELECTORS)];
+}
+
+function setTokenBalanceElements(balance) {
+  const formatted = Math.max(0, Math.floor(balance)).toLocaleString('pl-PL');
+  getTokenBalanceElements().forEach((el) => {
+    el.textContent = formatted;
   });
+}
+
+function cancelTokenBalanceAnimation() {
+  if (animateTokenBalance._frame) {
+    cancelAnimationFrame(animateTokenBalance._frame);
+    animateTokenBalance._frame = null;
+  }
+  if (animateTokenBalance._timer) {
+    clearInterval(animateTokenBalance._timer);
+    animateTokenBalance._timer = null;
+  }
+}
+
+function animateTokenBalance(from, to) {
+  cancelTokenBalanceAnimation();
+
+  const start = Math.max(0, Math.floor(from));
+  const end = Math.max(0, Math.floor(to));
+  if (start === end) {
+    setTokenBalanceElements(end);
+    return;
+  }
+
+  const diff = Math.abs(end - start);
+  const direction = end > start ? 1 : -1;
+
+  if (diff <= 80) {
+    let current = start;
+    const stepMs = Math.max(20, Math.min(45, 900 / diff));
+    animateTokenBalance._timer = setInterval(() => {
+      current += direction;
+      setTokenBalanceElements(current);
+      if (current === end) cancelTokenBalanceAnimation();
+    }, stepMs);
+    return;
+  }
+
+  const duration = Math.min(2200, Math.max(800, diff * 5));
+  const t0 = performance.now();
+
+  function tick(now) {
+    const progress = Math.min((now - t0) / duration, 1);
+    const eased = 1 - (1 - progress) ** 2;
+    const value = Math.round(start + (end - start) * eased);
+    setTokenBalanceElements(value);
+    if (progress < 1) {
+      animateTokenBalance._frame = requestAnimationFrame(tick);
+    } else {
+      setTokenBalanceElements(end);
+      animateTokenBalance._frame = null;
+    }
+  }
+
+  animateTokenBalance._frame = requestAnimationFrame(tick);
+}
+
+function updateTokenUI(balance) {
+  cancelTokenBalanceAnimation();
+  setTokenBalanceElements(balance);
 }
 
 function syncTokenDisplay() {
@@ -1204,9 +1272,8 @@ async function purchaseTokenPack(packId) {
 
   try {
     const result = await window.DyskiAuth.purchasePack(packId);
-    updateInboxPricingBalance();
     renderInboxPricingShop();
-    showToast(`Dodano ${label} żetonów. Stan konta: ${result.newTokens}`);
+    showToast(`Dodano ${label} żetonów. Stan konta: ${result.newTokens.toLocaleString('pl-PL')}`);
   } catch (err) {
     showToast(err.message || 'Nie udało się doładować żetonów');
   }
@@ -1676,11 +1743,12 @@ function initDiscCarouselDrag() {
 function buildTokenPackagesHTML() {
   return TOKEN_PACKAGES.map(
     (pack) => `
-    <button type="button" class="token-package${pack.popular ? ' token-package--popular' : ''}" data-pack-id="${pack.id}">
+    <button type="button" class="token-package${pack.popular ? ' token-package--popular' : ''}${pack.bestValue ? ' token-package--best' : ''}" data-pack-id="${pack.id}">
       <div class="token-package__info">
         <div class="token-package__amount">
           ${pack.tokens} żetonów
           ${pack.popular ? '<span class="token-package__badge">Popularne</span>' : ''}
+          ${pack.bestValue ? '<span class="token-package__badge token-package__badge--best">Najlepsza wartość</span>' : ''}
         </div>
         ${pack.bonus ? `<p class="token-package__bonus">${pack.bonus}</p>` : ''}
       </div>
@@ -1714,6 +1782,8 @@ function updateInboxPricingBalance() {
   const el = document.getElementById('inbox-pricing-balance');
   if (el) el.textContent = getTokenBalance().toLocaleString('pl-PL');
 }
+
+window.animateTokenBalance = animateTokenBalance;
 
 function renderInboxPricingShop() {
   const shop = document.getElementById('inbox-pricing-shop');
@@ -2098,8 +2168,9 @@ async function handleLoginSubmit(e) {
   e.preventDefault();
   showLoginError('');
 
-  const identifier = document.getElementById('login-identifier')?.value.trim();
-  const password = document.getElementById('login-password')?.value;
+  const form = e.target;
+  const identifier = (form.elements.identifier?.value || document.getElementById('login-identifier')?.value || '').trim();
+  const password = form.elements.password?.value || document.getElementById('login-password')?.value || '';
 
   if (!identifier || !password) {
     showLoginError('Wpisz login (lub e-mail) i hasło.');
@@ -2135,10 +2206,13 @@ async function handleRegisterSubmit(e) {
   e.preventDefault();
   showRegisterError('');
 
-  const username = document.getElementById('reg-username')?.value.trim();
-  const email = document.getElementById('reg-email')?.value.trim().toLowerCase();
-  const password = document.getElementById('reg-password')?.value;
-  const passwordConfirm = document.getElementById('reg-password-confirm')?.value;
+  const form = e.target;
+  const username = (form.elements.username?.value || document.getElementById('reg-username')?.value || '').trim();
+  const email = (form.elements.email?.value || document.getElementById('reg-email')?.value || '').trim().toLowerCase();
+  const password = form.elements.password?.value || document.getElementById('reg-password')?.value || '';
+  const passwordConfirm = form.elements.passwordConfirm?.value
+    || document.getElementById('reg-password-confirm')?.value
+    || '';
 
   if (!username || !USERNAME_REGEX.test(username)) {
     showRegisterError('Nazwa użytkownika: 3–32 znaki (litery, cyfry, kropka, myślnik, podkreślnik). To nie jest pole e-mail.');
@@ -2429,7 +2503,7 @@ const HERO_PLACEHOLDER_IMAGE = 'images/hero-placeholder.png';
 
 function initHeroSlider() {
   const track = document.getElementById('hero-slider-track');
-  if (!track || track.querySelector('.hero-slider__slide--placeholder')) return;
+  if (!track || track.children.length > 0) return;
 
   track.innerHTML = `
     <div class="hero-slider__slide is-active hero-slider__slide--placeholder">

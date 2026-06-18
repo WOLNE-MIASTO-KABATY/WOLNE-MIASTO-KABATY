@@ -225,6 +225,12 @@
     return profileCache?.tokens ?? 0;
   }
 
+  function applyTokensFromServer(newTokens) {
+    if (profileCache && typeof newTokens === 'number') {
+      profileCache.tokens = newTokens;
+    }
+  }
+
   async function updateEmail(email) {
     if (!supabaseClient || !profileCache) throw new Error('Nie jesteś zalogowany');
     const { error: authError } = await supabaseClient.auth.updateUser({ email });
@@ -286,8 +292,13 @@
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Zakup nie powiódł się');
 
+    const previousTokens = profileCache?.tokens ?? 0;
     if (profileCache) profileCache.tokens = data.newTokens;
-    if (typeof updateTokenUI === 'function') updateTokenUI(data.newTokens);
+    if (typeof animateTokenBalance === 'function' && data.newTokens > previousTokens) {
+      animateTokenBalance(previousTokens, data.newTokens);
+    } else if (typeof updateTokenUI === 'function') {
+      updateTokenUI(data.newTokens);
+    }
     return data;
   }
 
@@ -322,6 +333,7 @@
     spendTokens,
     purchasePack,
     getTokenBalanceSync,
+    applyTokensFromServer,
     updateUsername,
     updateEmail,
     updatePassword,

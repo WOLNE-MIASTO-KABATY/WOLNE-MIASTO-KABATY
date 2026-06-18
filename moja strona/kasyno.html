@@ -79,6 +79,10 @@
           <span class="sidebar__link-icon sidebar__link-icon--casino" aria-hidden="true">🎰</span>
           <span class="sidebar__link-text">Kasyno</span>
         </a>
+        <a href="coinflip.html" class="sidebar__link" title="Coinflip">
+          <span class="sidebar__link-icon sidebar__link-icon--coinflip" aria-hidden="true">◐</span>
+          <span class="sidebar__link-text">Coinflip</span>
+        </a>
       </nav>
 
       <div class="sidebar__footer">
@@ -174,6 +178,10 @@
             </div>
 
             <p class="casino-page__disclaimer">Jeden spin na dobę. Nagrody losowane po stronie serwera.</p>
+
+            <nav class="casino-games-nav" aria-label="Inne gry kasynowe">
+              <a href="coinflip.html" class="casino-games-nav__link">◐ Coinflip</a>
+            </nav>
           </section>
         </div>
       </div>
@@ -188,22 +196,24 @@
       <header class="token-modal__header">
         <div>
           <h2 class="token-modal__title" id="auth-modal-title">Konto</h2>
-          <p class="token-modal__subtitle">Zaloguj się lub utwórz konto</p>
+          <p class="token-modal__subtitle auth-modal__subtitle" id="auth-modal-subtitle">Nazwa użytkownika (krótka), e-mail i hasło — załóż konto na DyskiHub.pl.</p>
         </div>
         <button type="button" class="token-modal__close" id="auth-modal-close" aria-label="Zamknij">&times;</button>
       </header>
-      <div class="auth-modal__tabs" role="tablist">
-        <button type="button" class="auth-modal__tab is-active" id="auth-tab-register" role="tab" aria-selected="true" aria-controls="auth-panel-register">Rejestracja</button>
-        <button type="button" class="auth-modal__tab" id="auth-tab-login" role="tab" aria-selected="false" aria-controls="auth-panel-login">Logowanie</button>
+      <div class="auth-modal__tabs" role="tablist" aria-label="Typ konta">
+        <button type="button" class="auth-modal__tab is-active" id="auth-tab-register" role="tab" aria-selected="true" aria-controls="auth-panel-register" data-auth-tab="register">Załóż konto</button>
+        <button type="button" class="auth-modal__tab" id="auth-tab-login" role="tab" aria-selected="false" aria-controls="auth-panel-login" data-auth-tab="login">Zaloguj się</button>
       </div>
       <div class="auth-modal__body" id="auth-panel-register" role="tabpanel" aria-labelledby="auth-tab-register">
         <form class="register-form" id="register-form" novalidate>
-          <label class="register-form__label" for="register-username">Login</label>
-          <input class="register-form__input" type="text" id="register-username" name="username" placeholder="np. Jan_Kowalski" autocomplete="username" required>
-          <label class="register-form__label" for="register-email">E-mail</label>
-          <input class="register-form__input" type="email" id="register-email" name="email" placeholder="jan@example.com" autocomplete="email" required>
-          <label class="register-form__label" for="register-password">Hasło</label>
-          <input class="register-form__input" type="password" id="register-password" name="password" placeholder="Min. 6 znaków" autocomplete="new-password" required>
+          <label class="register-form__label" for="reg-username">Nazwa użytkownika</label>
+          <input class="register-form__input" type="text" id="reg-username" name="username" placeholder="np. wiktoria (krótka nazwa, nie e-mail)" autocomplete="username" maxlength="32" required>
+          <label class="register-form__label" for="reg-email">E-mail</label>
+          <input class="register-form__input" type="email" id="reg-email" name="email" placeholder="twoj@email.pl" autocomplete="email" maxlength="254" required>
+          <label class="register-form__label" for="reg-password">Hasło</label>
+          <input class="register-form__input" type="password" id="reg-password" name="password" placeholder="Hasło" autocomplete="new-password" required>
+          <label class="register-form__label" for="reg-password-confirm">Powtórz hasło</label>
+          <input class="register-form__input" type="password" id="reg-password-confirm" name="passwordConfirm" placeholder="Ponownie" autocomplete="new-password" required>
           <p class="register-form__error" id="register-error" hidden></p>
           <button type="submit" class="btn btn--primary btn--full">Utwórz konto</button>
         </form>
@@ -218,7 +228,7 @@
           <button type="submit" class="btn btn--primary btn--full">Zaloguj się</button>
         </form>
       </div>
-      <p class="auth-modal__note">Konto demo — dane zapisywane lokalnie w przeglądarce.</p>
+      <p class="auth-modal__note">Konto na DyskiHub.pl — bezpieczna rejestracja i logowanie.</p>
     </div>
   </div>
 
