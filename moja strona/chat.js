@@ -425,9 +425,41 @@ function tryQuickReply(userText) {
   return null;
 }
 
+function isPhotoRequest(userText) {
+  const t = normalizeUserText(userText).toLowerCase();
+  if (/cennik|ceny|koszt|pakiet|ile za|zblurow|blur|doładuj|doładow/.test(t) && !/fotk|zdj[eę]c/.test(t)) {
+    return false;
+  }
+  return /fotk|zdj[eę]c|selfie|nast[eę]pn|kolejn|jeszcze jedn|wy[śs]lij.*(fot|zdj)|poka[żz].*(fot|zdj|kolejn|nast[eę]pn|jeszcze)|daj.*(fot|zdj|kolejn|nast[eę]pn)/.test(
+    t
+  );
+}
+
+function normalizeAssistantReplyForPhotoRequest(rawReply, userText) {
+  if (!isPhotoRequest(userText)) return rawReply || '';
+
+  let reply = (rawReply || '').trim();
+  reply = reply.replace(/\s*\[SHOW_PRICING\]\s*/gi, ' ').trim();
+
+  if (!/\[SEND_PHOTO\]/i.test(reply)) {
+    reply = reply ? `${reply} [SEND_PHOTO]` : 'dobra masz [SEND_PHOTO]';
+  }
+
+  return reply.replace(/\s+/g, ' ').trim();
+}
+
 function getReplyIntentHint(userText) {
   const t = normalizeUserText(userText).toLowerCase();
 
+  if (isPhotoRequest(userText)) {
+    return 'User prosi o zdjęcie/fotkę (także kolejną). Krótko się zgódź i dopisz tag [SEND_PHOTO]. NIE wysyłaj [SHOW_PRICING] ani [SHOW_TOPUP] — frontend sam wyśle kolejne zdjęcie z folderu.';
+  }
+  if (/zblurow|blur|czemu.*(niewidocz|zasłon|ukryt)|odblokuj/.test(t)) {
+    return 'User pyta o blur/zasłonięte zdjęcie — krótko wyjaśnij że kolejne fotki są premium i dopisz [SHOW_TOPUP]. NIE wysyłaj [SHOW_PRICING].';
+  }
+  if (/cennik|ceny|ile koszt|pakiet|co oferujesz/.test(t)) {
+    return 'User pyta o cennik/usługi — krótko odpowiedz i dopisz [SHOW_PRICING]. NIE wysyłaj [SEND_PHOTO] chyba że user też prosi o fotkę.';
+  }
   if (/^(jesteś|jestes|tu jesteś|tu jestes|haloo?|halo)\s*\??$/.test(t)) {
     return 'User pyta czy jesteś online — potwierdź krótko (np. "tak jestem a co"). NIE chwal go za słodycz ani nie mów o róży.';
   }
@@ -1036,6 +1068,8 @@ async function replyToUserMessageAt(userMessageIndex) {
   if (isOffTopicReply(reply, userText)) {
     reply = tryQuickReply(userText) || reply;
   }
+
+  reply = normalizeAssistantReplyForPhotoRequest(reply, userText);
 
   if (chatPaused) {
     setTyping(false);
