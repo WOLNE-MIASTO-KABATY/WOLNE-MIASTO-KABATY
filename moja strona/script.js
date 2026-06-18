@@ -172,6 +172,7 @@ function getUnlockedDiscIds() {
 
 function isDiscUnlocked(discId) {
   if (!discId) return false;
+  if (isPremiumUser()) return true;
   return getUnlockedDiscIds().includes(discId);
 }
 
@@ -218,6 +219,7 @@ function getUnlockedContentIds() {
 
 function isContentUnlocked(contentId) {
   if (!contentId) return false;
+  if (isPremiumUser()) return true;
   return getUnlockedContentIds().includes(contentId);
 }
 
@@ -355,6 +357,13 @@ function showContentClaimStep(item) {
 
 function confirmContentPurchase() {
   if (!pendingContentPurchase) return;
+
+  if (isPremiumUser()) {
+    markContentUnlocked(pendingContentPurchase.id);
+    showContentClaimStep(pendingContentPurchase);
+    showToast('Odblokowano dzięki Premium!');
+    return;
+  }
 
   const cost = pendingContentPurchase.cost;
   const balance = getTokenBalance();
@@ -1151,6 +1160,12 @@ function getTokenBalance() {
   return 0;
 }
 
+function isPremiumUser() {
+  return Boolean(window.DyskiAuth?.isPremiumUser?.());
+}
+
+window.isPremiumUser = isPremiumUser;
+
 function setTokenBalance(amount) {
   const value = Math.max(0, Math.floor(amount));
   const user = window.DyskiAuth?.getCurrentUser();
@@ -1537,6 +1552,13 @@ function confirmDiscPurchase() {
   if (purchaseMode === 'content') return confirmContentPurchase();
   if (!pendingDiscPurchase) return;
 
+  if (isPremiumUser()) {
+    markDiscUnlocked(pendingDiscPurchase.discId);
+    showDiscClaimStep(pendingDiscPurchase);
+    showToast('Odblokowano dzięki Premium!');
+    return;
+  }
+
   const balance = getTokenBalance();
   if (balance < DISC_UNLOCK_COST) {
     showToast(`Potrzebujesz ${DISC_UNLOCK_COST} żetonów, aby odebrać dysk.`);
@@ -1892,6 +1914,128 @@ function closeTokenShop() {
   document.body.style.overflow = '';
 }
 
+function openPremiumModal() {
+  const modal = document.getElementById('premium-modal');
+  if (!modal) return;
+
+  if (!window.DyskiAuth?.getCurrentUser()) {
+    openAuthModal('login');
+    return;
+  }
+
+  if (isPremiumUser()) {
+    showToast('Masz już aktywne Premium.');
+    return;
+  }
+
+  modal.classList.add('is-open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  closeWalletDropdown();
+  closeProfileMenu();
+  closeAuthModal();
+  closeTokenShop();
+}
+
+function closePremiumModal() {
+  const modal = document.getElementById('premium-modal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  if (
+    !document.getElementById('token-modal')?.classList.contains('is-open') &&
+    !document.getElementById('auth-modal')?.classList.contains('is-open')
+  ) {
+    document.body.style.overflow = '';
+  }
+}
+
+function applyPremiumUnlockUI() {
+  renderDiscGrid();
+  Object.keys(CONTENT_HUB_ITEMS).forEach((id) => refreshContentHubCard(id));
+}
+
+function updatePremiumUI() {
+  const user = getCurrentUser();
+  const isPremium = isPremiumUser();
+  const sidebarUser = document.getElementById('sidebar-user');
+  const sidebarName = document.getElementById('sidebar-username');
+  const premiumBtn = document.getElementById('sidebar-premium-btn');
+
+  if (sidebarName) {
+    sidebarName.textContent = isPremium ? 'Premium' : user ? user.username.toUpperCase() : 'GOŚĆ';
+  }
+
+  if (sidebarUser) {
+    sidebarUser.classList.toggle('sidebar__user--premium', isPremium);
+  }
+
+  if (premiumBtn) {
+    if (isPremium) {
+      premiumBtn.textContent = 'Premium aktywne';
+      premiumBtn.disabled = true;
+      premiumBtn.classList.add('is-active');
+      premiumBtn.setAttribute('aria-pressed', 'true');
+    } else {
+      premiumBtn.textContent = 'Kup Premium';
+      premiumBtn.disabled = false;
+      premiumBtn.classList.remove('is-active');
+      premiumBtn.setAttribute('aria-pressed', 'false');
+    }
+  }
+
+  if (isPremium) applyPremiumUnlockUI();
+}
+
+async function purchasePremium() {
+  if (!window.DyskiAuth?.getCurrentUser()) {
+    openAuthModal('login');
+    return;
+  }
+
+  if (isPremiumUser()) {
+    showToast('Masz już aktywne Premium.');
+    return;
+  }
+
+  const btn = document.getElementById('premium-purchase-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Przetwarzanie…';
+  }
+
+  try {
+    await window.DyskiAuth.purchasePremium();
+    closePremiumModal();
+    updatePremiumUI();
+    updateRegisterUI();
+    showToast('Premium aktywowane! Wszystkie treści odblokowane.');
+  } catch (err) {
+    showToast(err.message || 'Nie udało się kupić Premium');
+  } finally {
+    if (btn) {
+      btn.disabled = isPremiumUser();
+      btn.textContent = isPremiumUser() ? 'Premium aktywne' : 'Kup Premium — 79,99 zł';
+    }
+  }
+}
+
+function initPremium() {
+  document.getElementById('sidebar-premium-btn')?.addEventListener('click', () => {
+    if (isPremiumUser()) return;
+    openPremiumModal();
+  });
+
+  document.getElementById('premium-modal-close')?.addEventListener('click', closePremiumModal);
+  document.getElementById('premium-modal-backdrop')?.addEventListener('click', closePremiumModal);
+  document.getElementById('premium-purchase-btn')?.addEventListener('click', purchasePremium);
+
+  window.addEventListener('dyskihub-auth', updatePremiumUI);
+  updatePremiumUI();
+}
+
+window.updatePremiumUI = updatePremiumUI;
+
 function closeWalletDropdown() {
   const dropdown = document.getElementById('wallet-dropdown');
   const trigger = document.getElementById('wallet-trigger');
@@ -1986,6 +2130,7 @@ function initWallet() {
       closeEditModal();
       closeAuthModal();
       closeTokenShop();
+      closePremiumModal();
       closeProfileMenu();
       closeWalletDropdown();
       closeInbox();
@@ -2089,10 +2234,7 @@ function updateRegisterUI() {
 
   if (!toggle) return;
 
-  const sidebarName = document.getElementById('sidebar-username');
-  if (sidebarName) {
-    sidebarName.textContent = user ? user.username.toUpperCase() : 'GOŚĆ';
-  }
+  updatePremiumUI();
 
   const profileAvatar = document.getElementById('profile-menu-avatar');
   if (profileAvatar) {
@@ -2836,6 +2978,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   safeInit(initAccountPage);
   safeInit(initAccountSettingsPage);
   safeInit(initReferralPage);
+  safeInit(initPremium);
   safeInit(initScrollAnimations);
   updateRegisterUI();
 });

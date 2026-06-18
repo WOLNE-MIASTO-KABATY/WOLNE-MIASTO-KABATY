@@ -233,20 +233,35 @@ function animateCoin(outcome) {
   });
 }
 
+async function getAuthToken() {
+  if (window.DyskiAuth?.ensureAccessToken) {
+    return window.DyskiAuth.ensureAccessToken();
+  }
+  return window.DyskiAuth?.getAccessToken?.() || null;
+}
+
 async function coinflipFetch(bet, choice) {
-  const token = window.DyskiAuth?.getAccessToken?.();
+  let token = await getAuthToken();
   if (!token) throw new Error('Zaloguj się, aby grać');
 
-  let res;
-  try {
-    res = await fetch(COINFLIP_API, {
+  async function request(accessToken) {
+    return fetch(COINFLIP_API, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ bet, choice }),
     });
+  }
+
+  let res;
+  try {
+    res = await request(token);
+    if (res.status === 401 && window.DyskiAuth?.refreshSession) {
+      token = await window.DyskiAuth.refreshSession(true);
+      if (token) res = await request(token);
+    }
   } catch {
     throw new Error('Brak połączenia z serwerem. Sprawdź internet i spróbuj ponownie.');
   }
@@ -392,8 +407,9 @@ async function initCoinflip() {
 
   if (window.DyskiAuth?.initAuth) {
     await window.DyskiAuth.initAuth();
-    if (isLoggedIn() && window.DyskiAuth.loadProfile) {
-      await window.DyskiAuth.loadProfile();
+    if (isLoggedIn()) {
+      if (window.DyskiAuth.ensureAccessToken) await window.DyskiAuth.ensureAccessToken();
+      if (window.DyskiAuth.loadProfile) await window.DyskiAuth.loadProfile();
     }
   }
 

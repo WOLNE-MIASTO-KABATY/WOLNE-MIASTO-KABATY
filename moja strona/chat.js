@@ -5,8 +5,21 @@
 const CHAT_API_URL = '/.netlify/functions/chat';
 const MODEL = 'deepseek/deepseek-chat';
 const CHAT_DURATION_MS = 90000;
+const PREMIUM_CHAT_BONUS_MS = 300000;
 const EXTENSION_MS = 600000;
 const EXTENSION_COST = 30;
+
+function isPremiumChatUser() {
+  return typeof window.isPremiumUser === 'function' && window.isPremiumUser();
+}
+
+function getChatDurationMs() {
+  return CHAT_DURATION_MS + (isPremiumChatUser() ? PREMIUM_CHAT_BONUS_MS : 0);
+}
+
+function getExtensionMs() {
+  return EXTENSION_MS + (isPremiumChatUser() ? PREMIUM_CHAT_BONUS_MS : 0);
+}
 const PHOTO_UNLOCK_COST = 20;
 const ROSE_GIFT_COST = 15;
 const ROSE_GIFT_SRC = 'images/gifts/rose.gif';
@@ -791,7 +804,7 @@ async function sendRoseGift() {
   }
 
   if (!getSessionEnd(kolezankaId)) {
-    setSessionEnd(kolezankaId, Date.now() + CHAT_DURATION_MS);
+    setSessionEnd(kolezankaId, Date.now() + getChatDurationMs());
     startChatTimer();
   }
 
@@ -1128,7 +1141,7 @@ async function sendUserMessage(text) {
   }
 
   if (!getSessionEnd(kolezankaId)) {
-    setSessionEnd(kolezankaId, Date.now() + CHAT_DURATION_MS);
+    setSessionEnd(kolezankaId, Date.now() + getChatDurationMs());
     startChatTimer();
   }
 
@@ -1250,7 +1263,7 @@ function extendChatSession() {
     setTokenBalance(balance - EXTENSION_COST);
   }
 
-  setSessionEnd(kolezankaId, Date.now() + EXTENSION_MS);
+  setSessionEnd(kolezankaId, Date.now() + getExtensionMs());
   hideExtensionModal();
   enableComposer();
   startChatTimer();

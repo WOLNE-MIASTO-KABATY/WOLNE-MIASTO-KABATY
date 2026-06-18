@@ -34,20 +34,35 @@ function isLoggedIn() {
   return Boolean(window.DyskiAuth?.getAccessToken?.());
 }
 
+async function getAuthToken() {
+  if (window.DyskiAuth?.ensureAccessToken) {
+    return window.DyskiAuth.ensureAccessToken();
+  }
+  return window.DyskiAuth?.getAccessToken?.() || null;
+}
+
 async function spinFetch(method) {
-  const token = window.DyskiAuth?.getAccessToken?.();
+  let token = await getAuthToken();
   if (!token) throw new Error('Zaloguj się, aby kręcić kołem');
 
-  let res;
-  try {
-    res = await fetch(SPIN_API, {
+  async function request(accessToken) {
+    return fetch(SPIN_API, {
       method,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
       },
       body: method === 'POST' ? '{}' : undefined,
     });
+  }
+
+  let res;
+  try {
+    res = await request(token);
+    if (res.status === 401 && window.DyskiAuth?.refreshSession) {
+      token = await window.DyskiAuth.refreshSession(true);
+      if (token) res = await request(token);
+    }
   } catch {
     throw new Error('Brak połączenia z serwerem spinu. Sprawdź internet i spróbuj ponownie.');
   }
@@ -404,6 +419,10 @@ async function initDailySpin() {
 
   if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
   if (typeof updateRegisterUI === 'function') updateRegisterUI();
+
+  if (isLoggedIn() && window.DyskiAuth?.ensureAccessToken) {
+    await window.DyskiAuth.ensureAccessToken();
+  }
 
   await refreshSpinStatus();
   startCountdownTicker();

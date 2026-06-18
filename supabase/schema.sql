@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   username text not null,
   email text not null,
   tokens integer not null default 25 check (tokens >= 0),
+  is_premium boolean not null default false,
   is_admin boolean not null default false,
   referred_by text,
   banned boolean not null default false,

@@ -28,9 +28,11 @@
         </a>
       </div>
 
-      <div class="sidebar__user">
+      <div class="sidebar__user" id="sidebar-user">
         <p class="sidebar__username" id="sidebar-username">GOŚĆ</p>
-        <div class="wallet wallet--sidebar" id="wallet">
+        <div class="sidebar__wallet-stack">
+          <span class="sidebar__wallet-label">Żetony</span>
+          <div class="wallet wallet--sidebar" id="wallet">
           <button type="button" class="wallet__trigger wallet__trigger--pill" id="wallet-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="wallet-dropdown">
             <span class="wallet__pill-icon" aria-hidden="true">◆</span>
             <span class="wallet__balance" id="token-balance">0</span>
@@ -43,6 +45,8 @@
             <p class="wallet__dropdown-hint">Żetony odblokowują wiadomości premium i priorytetowe czaty.</p>
             <button type="button" class="btn btn--primary btn--full js-open-token-shop">Doładuj konto</button>
           </div>
+        </div>
+          <button type="button" class="sidebar__premium-btn" id="sidebar-premium-btn">Kup Premium</button>
         </div>
       </div>
 
@@ -235,6 +239,27 @@
       <p class="token-modal__balance">Aktualny stan: <strong id="token-balance-modal">0</strong> żetonów</p>
       <div class="token-packages" id="token-packages"></div>
       <p class="token-modal__note">Płatność demo — po integracji podłącz bramkę płatności / link afiliacyjny.</p>
+    </div>
+  </div>
+
+  <div class="token-modal premium-modal" id="premium-modal" aria-hidden="true" role="dialog" aria-labelledby="premium-modal-title">
+    <div class="token-modal__backdrop" id="premium-modal-backdrop"></div>
+    <div class="token-modal__panel premium-modal__panel">
+      <header class="token-modal__header">
+        <div>
+          <h2 class="token-modal__title" id="premium-modal-title">Premium DyskiHub</h2>
+          <p class="token-modal__subtitle">Jednorazowy dostęp do wszystkich treści</p>
+        </div>
+        <button type="button" class="token-modal__close" id="premium-modal-close" aria-label="Zamknij">&times;</button>
+      </header>
+      <ul class="premium-modal__perks">
+        <li>Darmowy dostęp do <strong>wszystkich dysków</strong></li>
+        <li>Darmowy dostęp do <strong>gier i komiksów</strong></li>
+        <li><strong>+5 minut</strong> dłuższy czat w każdej rozmowie</li>
+      </ul>
+      <p class="premium-modal__price"><span>Cena</span> <strong>79,99 zł</strong></p>
+      <button type="button" class="btn btn--premium btn--full" id="premium-purchase-btn">Kup Premium — 79,99 zł</button>
+      <p class="token-modal__note">Płatność demo — po integracji podłącz bramkę płatności.</p>
     </div>
   </div>
 

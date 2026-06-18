@@ -20,14 +20,77 @@
       localStorage.removeItem(SESSION_KEY);
       return;
     }
+    const expiresAt = session.expires_at
+      ? (session.expires_at > 1e12 ? session.expires_at : session.expires_at * 1000)
+      : Date.now() + (session.expires_in || 3600) * 1000;
     localStorage.setItem(
       SESSION_KEY,
       JSON.stringify({
         access_token: session.access_token,
         refresh_token: session.refresh_token,
-        expires_at: session.expires_at || Date.now() + (session.expires_in || 3600) * 1000,
+        expires_at: expiresAt,
       })
     );
+  }
+
+  function sessionFromSupabase(supabaseSession) {
+    if (!supabaseSession) return null;
+    return {
+      access_token: supabaseSession.access_token,
+      refresh_token: supabaseSession.refresh_token,
+      expires_in: supabaseSession.expires_in,
+      expires_at: supabaseSession.expires_at,
+    };
+  }
+
+  function isSessionExpiringSoon(stored) {
+    if (!stored?.access_token) return true;
+    if (!stored.expires_at) return true;
+    return Date.now() >= stored.expires_at - 60_000;
+  }
+
+  async function refreshSession(force = false) {
+    const stored = getStoredSession();
+    if (!stored?.refresh_token) return null;
+
+    if (!force && !isSessionExpiringSoon(stored)) {
+      return stored.access_token;
+    }
+
+    if (!supabaseClient) {
+      try {
+        const config = await fetchConfig();
+        supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    const { data, error } = await supabaseClient.auth.refreshSession({
+      refresh_token: stored.refresh_token,
+    });
+
+    if (error || !data.session) {
+      localStorage.removeItem(SESSION_KEY);
+      profileCache = null;
+      return null;
+    }
+
+    saveSession(sessionFromSupabase(data.session));
+    return data.session.access_token;
+  }
+
+  async function ensureAccessToken() {
+    const stored = getStoredSession();
+    if (!stored?.access_token) return null;
+
+    if (!isSessionExpiringSoon(stored)) {
+      return stored.access_token;
+    }
+
+    return refreshSession(true);
   }
 
   async function fetchConfig() {
@@ -57,6 +120,12 @@
         refresh_token: stored.refresh_token,
       });
       if (!error && data.session) {
+        saveSession(sessionFromSupabase(data.session));
+        await loadProfile();
+        return true;
+      }
+      const refreshed = await refreshSession(true);
+      if (refreshed) {
         await loadProfile();
         return true;
       }
@@ -75,6 +144,10 @@
     return getStoredSession()?.access_token || null;
   }
 
+  async function getAccessTokenFresh() {
+    return ensureAccessToken();
+  }
+
   function getCurrentUser() {
     if (!profileCache) return null;
     return {
@@ -82,6 +155,7 @@
       username: profileCache.username,
       email: profileCache.email,
       tokens: profileCache.tokens,
+      is_premium: profileCache.is_premium,
       is_admin: profileCache.is_admin,
     };
   }
@@ -108,11 +182,20 @@
       return null;
     }
 
-    const { data, error } = await supabaseClient
+    let { data, error } = await supabaseClient
       .from('profiles')
-      .select('id, username, email, tokens, is_admin, banned, created_at, referred_by')
+      .select('id, username, email, tokens, is_admin, is_premium, banned, created_at, referred_by')
       .eq('id', userData.user.id)
       .maybeSingle();
+
+    if (error && /is_premium/i.test(error.message || '')) {
+      ({ data, error } = await supabaseClient
+        .from('profiles')
+        .select('id, username, email, tokens, is_admin, banned, created_at, referred_by')
+        .eq('id', userData.user.id)
+        .maybeSingle());
+      if (data) data.is_premium = false;
+    }
 
     if (error || !data) {
       profileCache = null;
@@ -125,6 +208,12 @@
     }
 
     profileCache = data;
+
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    if (sessionData?.session) {
+      saveSession(sessionFromSupabase(sessionData.session));
+    }
+
     if (typeof updateTokenUI === 'function') {
       updateTokenUI(data.tokens);
     }
@@ -205,6 +294,7 @@
     localStorage.removeItem(SESSION_KEY);
     if (supabaseClient) await supabaseClient.auth.signOut();
     if (typeof updateTokenUI === 'function') updateTokenUI(0);
+    if (typeof updatePremiumUI === 'function') updatePremiumUI();
   }
 
   async function spendTokens(amount) {
@@ -223,6 +313,10 @@
 
   function getTokenBalanceSync() {
     return profileCache?.tokens ?? 0;
+  }
+
+  function isPremiumUser() {
+    return Boolean(profileCache?.is_premium);
   }
 
   function applyTokensFromServer(newTokens) {
@@ -277,7 +371,7 @@
   }
 
   async function purchasePack(packId) {
-    const token = getAccessToken();
+    const token = await ensureAccessToken();
     if (!token) throw new Error('Zaloguj się, aby kupić żetony');
 
     const res = await fetch('/.netlify/functions/token-purchase', {
@@ -302,8 +396,29 @@
     return data;
   }
 
+  async function purchasePremium() {
+    const token = await ensureAccessToken();
+    if (!token) throw new Error('Zaloguj się, aby kupić Premium');
+
+    const res = await fetch('/.netlify/functions/premium-purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: '{}',
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Zakup Premium nie powiódł się');
+
+    if (profileCache) profileCache.is_premium = true;
+    if (typeof updatePremiumUI === 'function') updatePremiumUI();
+    return data;
+  }
+
   async function adminFetch(path, options = {}) {
-    const token = getAccessToken();
+    const token = await ensureAccessToken();
     if (!token) throw new Error('Brak sesji');
 
     const res = await fetch(`/.netlify/functions/${path}`, {
@@ -324,6 +439,9 @@
     initAuth,
     getSupabase,
     getAccessToken,
+    getAccessTokenFresh,
+    ensureAccessToken,
+    refreshSession,
     getCurrentUser,
     isAdminSession,
     loadProfile,
@@ -332,7 +450,9 @@
     signOut,
     spendTokens,
     purchasePack,
+    purchasePremium,
     getTokenBalanceSync,
+    isPremiumUser,
     applyTokensFromServer,
     updateUsername,
     updateEmail,
