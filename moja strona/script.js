@@ -1173,6 +1173,53 @@ function isPremiumUser() {
 
 window.isPremiumUser = isPremiumUser;
 
+let superfanProfileIds = new Set();
+
+async function refreshSuperfanProfiles() {
+  if (!window.DyskiAuth?.getCurrentUser?.()) {
+    superfanProfileIds = new Set();
+    return [];
+  }
+
+  try {
+    const token = await window.DyskiAuth.ensureAccessToken?.();
+    if (!token) {
+      superfanProfileIds = new Set();
+      return [];
+    }
+
+    const res = await fetch('/.netlify/functions/superfan', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      superfanProfileIds = new Set();
+      return [];
+    }
+
+    superfanProfileIds = new Set((data.profileIds || []).map(Number));
+    return [...superfanProfileIds];
+  } catch {
+    superfanProfileIds = new Set();
+    return [];
+  }
+}
+
+function isSuperFanForProfile(profileId) {
+  if (profileId == null) return false;
+  return superfanProfileIds.has(Number(profileId));
+}
+
+function markSuperFanProfile(profileId) {
+  if (profileId == null) return;
+  superfanProfileIds.add(Number(profileId));
+}
+
+window.isSuperFanForProfile = isSuperFanForProfile;
+window.refreshSuperfanProfiles = refreshSuperfanProfiles;
+window.markSuperFanProfile = markSuperFanProfile;
+
 function setTokenBalance(amount) {
   const value = Math.max(0, Math.floor(amount));
   const user = window.DyskiAuth?.getCurrentUser();
@@ -2037,7 +2084,9 @@ function initPremium() {
   document.getElementById('premium-modal-backdrop')?.addEventListener('click', closePremiumModal);
   document.getElementById('premium-purchase-btn')?.addEventListener('click', purchasePremium);
 
-  window.addEventListener('dyskihub-auth', updatePremiumUI);
+  window.addEventListener('dyskihub-auth', () => {
+    refreshSuperfanProfiles().then(() => updatePremiumUI());
+  });
   updatePremiumUI();
 }
 
@@ -2974,6 +3023,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.DyskiAuth) {
     try {
       await window.DyskiAuth.initAuth();
+      await refreshSuperfanProfiles();
     } catch (err) {
       console.error('Auth init failed', err);
     }

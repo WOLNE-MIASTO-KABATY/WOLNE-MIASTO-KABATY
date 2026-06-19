@@ -76,6 +76,27 @@ async function fetchUnlockedKeys(auth, profileId) {
   return rows.map((row) => row.photo_key).filter(Boolean);
 }
 
+async function fetchIsSuperFan(auth, profileId) {
+  const query = new URLSearchParams({
+    select: 'id',
+    user_id: `eq.${auth.userId}`,
+    profile_id: `eq.${profileId}`,
+    limit: '1',
+  });
+
+  const res = await fetch(`${auth.supabaseUrl}/rest/v1/profile_superfan_subscriptions?${query.toString()}`, {
+    headers: {
+      apikey: auth.anonKey,
+      Authorization: `Bearer ${auth.token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  if (!res.ok) return false;
+  const rows = await res.json();
+  return rows.length > 0;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders, body: '' };
@@ -94,7 +115,8 @@ exports.handler = async (event) => {
       if (!profileId) return jsonResponse(400, { error: 'Nieprawidłowy profil' });
 
       const unlockedKeys = await fetchUnlockedKeys(auth, profileId);
-      return jsonResponse(200, { profileId, unlockCost: UNLOCK_COST, unlockedKeys });
+      const isSuperFan = await fetchIsSuperFan(auth, profileId);
+      return jsonResponse(200, { profileId, unlockCost: UNLOCK_COST, unlockedKeys, isSuperFan });
     }
 
     let body = {};

@@ -3,6 +3,7 @@
  */
 
 const PHOTO_UNLOCK_API = '/.netlify/functions/photo-unlock';
+const SUPERFAN_API = '/.netlify/functions/superfan';
 const PHOTO_UNLOCK_COST = 20;
 const PHOTO_MAX_INDEX = 20;
 const PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -26,7 +27,13 @@ const state = {
   photos: [],
   unlocked: new Set(),
   loadingUnlock: new Set(),
+  isSuperFan: false,
+  purchasingSuperFan: false,
 };
+
+function isSuperFanActive() {
+  return state.isSuperFan || (typeof window.isSuperFanForProfile === 'function' && window.isSuperFanForProfile(state.profileId));
+}
 
 function parseProfileIdFromUrl() {
   const id = Number(new URLSearchParams(window.location.search).get('id'));
@@ -142,6 +149,10 @@ async function loadUnlocks() {
 
   const data = await callUnlockApi('GET');
   state.unlocked = new Set(data.unlockedKeys || []);
+  state.isSuperFan = Boolean(data.isSuperFan);
+  if (state.isSuperFan && typeof window.markSuperFanProfile === 'function') {
+    window.markSuperFanProfile(state.profileId);
+  }
 }
 
 function renderProfileHeader() {
@@ -157,8 +168,11 @@ function renderProfileHeader() {
     if (cityEl) cityEl.textContent = 'Sprawdź poprawność linku';
     if (bioEl) bioEl.textContent = 'Ten profil nie istnieje lub został usunięty.';
     if (writeBtn) writeBtn.hidden = true;
+    document.getElementById('profile-gallery-superfan-btn')?.setAttribute('hidden', '');
     return;
   }
+
+  document.getElementById('profile-gallery-superfan-btn')?.removeAttribute('hidden');
 
   if (titleEl) titleEl.textContent = `${p.imie || 'Koleżanka'}, ${p.wiek ?? ''}`.trim();
   if (cityEl) cityEl.textContent = (p.miasto || '—').toUpperCase();
@@ -171,10 +185,154 @@ function renderProfileHeader() {
     writeBtn.hidden = false;
     writeBtn.href = `index.html?inbox=${p.id}#messages`;
   }
+
+  updateSuperfanButton();
+  updateGalleryHint();
+}
+
+function updateGalleryHint() {
+  const hint = document.getElementById('profile-gallery-hint');
+  if (!hint || !state.profile) return;
+
+  if (isSuperFanActive()) {
+    hint.innerHTML = 'Masz aktywny <strong>SuperFan</strong> — wszystkie zdjęcia i filmy odblokowane, czat bez limitu.';
+    hint.classList.add('profile-gallery-page__hint--superfan');
+  } else {
+    hint.innerHTML = 'Wszystkie zdjęcia są zablokowane. Odblokowanie jednego zdjęcia kosztuje <strong>20 żetonów</strong>.';
+    hint.classList.remove('profile-gallery-page__hint--superfan');
+  }
+}
+
+function updateSuperfanButton() {
+  const btn = document.getElementById('profile-gallery-superfan-btn');
+  const hero = document.querySelector('.profile-gallery-hero');
+  if (!btn) return;
+
+  if (!state.profile) {
+    btn.hidden = true;
+    return;
+  }
+
+  btn.hidden = false;
+
+  if (isSuperFanActive()) {
+    btn.disabled = true;
+    btn.classList.add('is-active');
+    btn.innerHTML = '<span class="profile-gallery-hero__superfan-icon" aria-hidden="true">◆</span> SuperFan aktywny';
+    hero?.classList.add('profile-gallery-hero--superfan');
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('is-active');
+    btn.innerHTML = '<span class="profile-gallery-hero__superfan-icon" aria-hidden="true">◆</span> Zostań SuperFanem';
+    hero?.classList.remove('profile-gallery-hero--superfan');
+  }
+}
+
+function openSuperfanModal() {
+  if (!state.profile) return;
+
+  if (!isLoggedIn()) {
+    if (typeof openAuthModal === 'function') openAuthModal('login');
+    return;
+  }
+
+  if (isSuperFanActive()) {
+    if (typeof showToast === 'function') showToast('Masz już aktywny SuperFan u tej koleżanki.');
+    return;
+  }
+
+  const modal = document.getElementById('superfan-modal');
+  const nameEl = document.getElementById('superfan-modal-name');
+  const subtitle = document.getElementById('superfan-modal-subtitle');
+  const title = document.getElementById('superfan-modal-title');
+
+  if (nameEl) nameEl.textContent = state.profile.imie || 'koleżanki';
+  if (subtitle) subtitle.textContent = `Subskrypcja u ${state.profile.imie || 'koleżanki'}`;
+  if (title) title.textContent = `SuperFan — ${state.profile.imie || 'koleżanka'}`;
+
+  modal?.classList.add('is-open');
+  modal?.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSuperfanModal() {
+  const modal = document.getElementById('superfan-modal');
+  if (!modal) return;
+  modal.classList.remove('is-open');
+  modal.setAttribute('aria-hidden', 'true');
+  if (
+    !document.getElementById('token-modal')?.classList.contains('is-open') &&
+    !document.getElementById('auth-modal')?.classList.contains('is-open')
+  ) {
+    document.body.style.overflow = '';
+  }
+}
+
+async function purchaseSuperfan() {
+  if (!state.profile || state.purchasingSuperFan) return;
+
+  if (!isLoggedIn()) {
+    if (typeof openAuthModal === 'function') openAuthModal('login');
+    return;
+  }
+
+  if (isSuperFanActive()) {
+    if (typeof showToast === 'function') showToast('Masz już aktywny SuperFan u tej koleżanki.');
+    return;
+  }
+
+  const btn = document.getElementById('superfan-purchase-btn');
+  state.purchasingSuperFan = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Przetwarzanie…';
+  }
+
+  try {
+    const token = await getAuthToken();
+    if (!token) throw new Error('Zaloguj się, aby kupić SuperFan');
+
+    const res = await fetch(SUPERFAN_API, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ profileId: state.profile.id }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Zakup SuperFan nie powiódł się');
+
+    state.isSuperFan = true;
+    if (typeof window.markSuperFanProfile === 'function') {
+      window.markSuperFanProfile(state.profile.id);
+    }
+    if (typeof window.refreshSuperfanProfiles === 'function') {
+      await window.refreshSuperfanProfiles();
+    }
+
+    closeSuperfanModal();
+    updateSuperfanButton();
+    updateGalleryHint();
+    renderGallery();
+
+    if (typeof showToast === 'function') {
+      showToast(`SuperFan aktywowany u ${state.profile.imie || 'koleżanki'}!`);
+    }
+  } catch (err) {
+    if (typeof showToast === 'function') showToast(err.message || 'Nie udało się kupić SuperFan');
+  } finally {
+    state.purchasingSuperFan = false;
+    if (btn) {
+      btn.disabled = isSuperFanActive();
+      btn.textContent = isSuperFanActive() ? 'SuperFan aktywny' : 'Kup SuperFan — 59,99 zł';
+    }
+  }
 }
 
 function buildPhotoCard(photo) {
-  const unlocked = state.unlocked.has(photo.key);
+  const unlocked = isSuperFanActive() || state.unlocked.has(photo.key);
   const isUnlocking = state.loadingUnlock.has(photo.key);
   const lockText = isUnlocking ? 'Odblokowuję…' : `Odblokuj za ${PHOTO_UNLOCK_COST} żetonów`;
   const overlayHtml = unlocked
@@ -217,6 +375,11 @@ function renderGallery() {
 
 async function unlockPhoto(photoKey) {
   if (!state.profile) return;
+
+  if (isSuperFanActive()) {
+    if (typeof showToast === 'function') showToast('Masz SuperFan — wszystkie zdjęcia są już odblokowane.');
+    return;
+  }
 
   if (!isLoggedIn()) {
     if (typeof openAuthModal === 'function') openAuthModal('login');
@@ -261,6 +424,15 @@ function bindGalleryActions() {
     if (!button) return;
     unlockPhoto(button.dataset.photoKey);
   });
+
+  document.getElementById('profile-gallery-superfan-btn')?.addEventListener('click', openSuperfanModal);
+  document.getElementById('superfan-modal-close')?.addEventListener('click', closeSuperfanModal);
+  document.getElementById('superfan-modal-backdrop')?.addEventListener('click', closeSuperfanModal);
+  document.getElementById('superfan-purchase-btn')?.addEventListener('click', purchaseSuperfan);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSuperfanModal();
+  });
 }
 
 async function initProfilePage() {
@@ -279,19 +451,29 @@ async function initProfilePage() {
   state.photos = await discoverProfilePhotos(state.profile.id);
 
   try {
+    if (typeof window.refreshSuperfanProfiles === 'function') {
+      await window.refreshSuperfanProfiles();
+    }
     await loadUnlocks();
   } catch (err) {
     console.error(err);
   }
 
+  updateSuperfanButton();
+  updateGalleryHint();
   renderGallery();
 
   window.addEventListener('dyskihub-auth', async () => {
     try {
+      if (typeof window.refreshSuperfanProfiles === 'function') {
+        await window.refreshSuperfanProfiles();
+      }
       await loadUnlocks();
     } catch (err) {
       console.error(err);
     }
+    updateSuperfanButton();
+    updateGalleryHint();
     renderGallery();
   });
 }

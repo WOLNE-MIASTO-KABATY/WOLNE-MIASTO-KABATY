@@ -8296,6 +8296,130 @@ button.profile-card__btn--chat {
   min-width: 130px;
 }
 
+.profile-gallery-hero__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 170px;
+}
+
+.profile-gallery-hero__superfan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.62rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%);
+  color: #1c1917;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.profile-gallery-hero__superfan:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 55%, #f59e0b 100%);
+  box-shadow: 0 6px 18px rgba(251, 191, 36, 0.45);
+}
+
+.profile-gallery-hero__superfan.is-active,
+.profile-gallery-hero__superfan:disabled {
+  background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+  opacity: 0.85;
+  cursor: default;
+}
+
+.profile-gallery-hero__superfan-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.profile-gallery-hero--superfan {
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.12);
+}
+
+.profile-gallery-page__hint--superfan {
+  color: #fcd34d;
+}
+
+.superfan-modal__panel {
+  max-width: 440px;
+  background: linear-gradient(180deg, rgba(45, 30, 8, 0.98) 0%, rgba(20, 14, 6, 0.98) 100%);
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+.superfan-modal__perks {
+  list-style: none;
+  margin: 0 0 1.15rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.superfan-modal__perks li {
+  position: relative;
+  padding-left: 1.25rem;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  line-height: 1.45;
+}
+
+.superfan-modal__perks li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  color: #fbbf24;
+  font-size: 0.65rem;
+  top: 0.2rem;
+}
+
+.superfan-modal__perks strong {
+  color: #fde68a;
+}
+
+.superfan-modal__price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.superfan-modal__price strong {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: #fde68a;
+}
+
+.btn--superfan {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+  border: 2px solid #b45309;
+  color: #1c1917;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.35);
+}
+
+.btn--superfan:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 50%, #f59e0b 100%);
+  box-shadow: 0 6px 24px rgba(251, 191, 36, 0.45);
+}
+
+.btn--superfan:disabled {
+  opacity: 0.65;
+}
+
 .profile-gallery-page__hint {
   margin: 0 0 0.95rem;
   color: var(--text-muted);
@@ -8376,6 +8500,11 @@ button.profile-card__btn--chat {
 
   .profile-gallery-hero__write {
     width: 100%;
+  }
+
+  .profile-gallery-hero__actions {
+    width: 100%;
+    min-width: 0;
   }
 }
 

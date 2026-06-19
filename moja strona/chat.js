@@ -585,8 +585,13 @@ function incrementPhotoCount(id) {
   localStorage.setItem(photoCountKey(id), String(getPhotoCount(id) + 1));
 }
 
+function isSuperFanChatUser(profileId = kolezankaId) {
+  return typeof window.isSuperFanForProfile === 'function' && window.isSuperFanForProfile(profileId);
+}
+
 function isPhotoUnlocked(profileId, index) {
   if (index <= 1) return true;
+  if (isSuperFanChatUser(profileId)) return true;
   return localStorage.getItem(unlockedPhotoKey(profileId, index)) === '1';
 }
 
@@ -623,6 +628,7 @@ function checkAccess(id) {
 }
 
 function isSessionExpired() {
+  if (isSuperFanChatUser()) return false;
   const end = getSessionEnd(kolezankaId);
   return end !== null && Date.now() >= end;
 }
@@ -884,6 +890,12 @@ function unlockPhotoInDom(wrap, profileId, photoIndex) {
 }
 
 function tryUnlockPhoto(wrap, profileId, photoIndex) {
+  if (isSuperFanChatUser(profileId)) {
+    unlockPhotoInDom(wrap, profileId, photoIndex);
+    if (typeof showToast === 'function') showToast('SuperFan — zdjęcie odblokowane.');
+    return;
+  }
+
   const balance = typeof getTokenBalance === 'function' ? getTokenBalance() : 0;
   if (balance < PHOTO_UNLOCK_COST) {
     if (typeof showToast === 'function') {
@@ -1314,6 +1326,12 @@ function onSessionExpired() {
 function startChatTimer() {
   if (timerHandle) clearTimeout(timerHandle);
 
+  if (isSuperFanChatUser()) {
+    hideExtensionModal();
+    enableComposer();
+    return;
+  }
+
   const endTime = getSessionEnd(kolezankaId);
   if (!Number.isFinite(endTime)) return;
 
@@ -1546,6 +1564,12 @@ async function activateInboxChatInner(profileId) {
   chatHistory = loadHistory(kolezankaId);
   enableComposer();
   renderHistoryMessages();
+
+  if (isSuperFanChatUser()) {
+    hideExtensionModal();
+    enableComposer();
+    return;
+  }
 
   if (getSessionEnd(kolezankaId)) {
     if (isSessionExpired()) {

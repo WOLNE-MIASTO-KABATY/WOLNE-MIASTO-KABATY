@@ -220,46 +220,60 @@
     return data;
   }
 
+  async function ensureSupabaseClient() {
+    if (supabaseClient) return true;
+    if (!window.supabase?.createClient) return false;
+    try {
+      return await initAuth();
+    } catch (err) {
+      console.error('ensureSupabaseClient failed', err);
+      return false;
+    }
+  }
+
   async function signUp({ username, email, password, referredBy }) {
-    if (!supabaseClient) throw new Error('Auth niedostępny');
-
-    const { data: available, error: checkErr } = await supabaseClient.rpc('check_username_available', {
-      p_username: username,
-    });
-    if (checkErr) throw new Error('Nie udało się sprawdzić loginu');
-    if (!available) throw new Error('Ten login jest już zajęty — wybierz inną nazwę.');
-
-    const { data, error } = await supabaseClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          referred_by: referredBy || null,
-        },
-      },
-    });
-
-    if (error) {
-      if (/already registered/i.test(error.message)) {
-        throw new Error('Ten e-mail jest już zarejestrowany.');
-      }
-      if (/password/i.test(error.message) && /(short|least|characters|length)/i.test(error.message)) {
-        throw new Error('Hasło jest za krótkie — użyj dłuższego hasła.');
-      }
-      throw new Error(error.message);
+    let res;
+    try {
+      res = await fetch('/.netlify/functions/auth-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password, referredBy }),
+      });
+    } catch {
+      throw new Error('Brak połączenia z serwerem rejestracji. Odśwież stronę i spróbuj ponownie.');
     }
 
-    if (data.session) {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Rejestracja nie powiodła się');
+
+    if (data.access_token) {
       saveSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-        expires_in: data.session.expires_in,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in,
       });
+
+      await ensureSupabaseClient();
+      if (supabaseClient) {
+        await supabaseClient.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+      }
       await loadProfile();
     }
 
-    return data;
+    return {
+      user: data.user,
+      session: data.access_token
+        ? {
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+            expires_in: data.expires_in,
+          }
+        : null,
+      needsEmailConfirmation: Boolean(data.needsEmailConfirmation),
+    };
   }
 
   async function signIn({ identifier, password }) {

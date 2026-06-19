@@ -212,6 +212,16 @@ begin
 end;
 $$;
 
+create table if not exists public.profile_superfan_subscriptions (
+  id bigserial primary key,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  profile_id integer not null check (profile_id >= 1),
+  created_at timestamptz not null default now(),
+  constraint profile_superfan_unique unique (user_id, profile_id)
+);
+
+create index if not exists profile_superfan_user_idx on public.profile_superfan_subscriptions (user_id);
+
 -- add_tokens: tylko service role (admin / zakup przez Functions) — nie dla klienta
 revoke execute on function public.add_tokens(integer) from public, anon, authenticated;
 grant execute on function public.spend_tokens(integer) to authenticated;
@@ -222,6 +232,7 @@ grant execute on function public.unlock_profile_photo(integer, text, integer) to
 alter table public.profiles enable row level security;
 alter table public.admin_actions enable row level security;
 alter table public.profile_photo_unlocks enable row level security;
+alter table public.profile_superfan_subscriptions enable row level security;
 
 drop policy if exists "Users read own profile" on public.profiles;
 create policy "Users read own profile"
@@ -244,4 +255,9 @@ create policy "Users update own profile safe"
 drop policy if exists "Users read own photo unlocks" on public.profile_photo_unlocks;
 create policy "Users read own photo unlocks"
   on public.profile_photo_unlocks for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users read own superfan subs" on public.profile_superfan_subscriptions;
+create policy "Users read own superfan subs"
+  on public.profile_superfan_subscriptions for select
   using (auth.uid() = user_id);

@@ -156,10 +156,16 @@
                 <p class="profile-gallery-hero__sub" id="profile-gallery-city">—</p>
                 <p class="profile-gallery-hero__bio" id="profile-gallery-bio">Ładowanie profilu…</p>
               </div>
-              <a href="index.html#messages" class="btn btn--primary profile-gallery-hero__write" id="profile-gallery-write-btn">Napisz</a>
+              <div class="profile-gallery-hero__actions">
+                <a href="index.html#messages" class="btn btn--primary profile-gallery-hero__write" id="profile-gallery-write-btn">Napisz</a>
+                <button type="button" class="profile-gallery-hero__superfan" id="profile-gallery-superfan-btn">
+                  <span class="profile-gallery-hero__superfan-icon" aria-hidden="true">◆</span>
+                  Zostań SuperFanem
+                </button>
+              </div>
             </header>
 
-            <p class="profile-gallery-page__hint">
+            <p class="profile-gallery-page__hint" id="profile-gallery-hint">
               Wszystkie zdjęcia są zablokowane. Odblokowanie jednego zdjęcia kosztuje <strong>20 żetonów</strong>.
             </p>
 
@@ -248,6 +254,27 @@
       </ul>
       <p class="premium-modal__price"><span>Cena</span> <strong>79,99 zł</strong></p>
       <button type="button" class="btn btn--premium btn--full" id="premium-purchase-btn">Kup Premium — 79,99 zł</button>
+      <p class="token-modal__note">Płatność demo — po integracji podłącz bramkę płatności.</p>
+    </div>
+  </div>
+
+  <div class="token-modal superfan-modal" id="superfan-modal" aria-hidden="true" role="dialog" aria-labelledby="superfan-modal-title">
+    <div class="token-modal__backdrop" id="superfan-modal-backdrop"></div>
+    <div class="token-modal__panel superfan-modal__panel">
+      <header class="token-modal__header">
+        <div>
+          <h2 class="token-modal__title" id="superfan-modal-title">SuperFan</h2>
+          <p class="token-modal__subtitle" id="superfan-modal-subtitle">Subskrypcja u wybranej koleżanki</p>
+        </div>
+        <button type="button" class="token-modal__close" id="superfan-modal-close" aria-label="Zamknij">&times;</button>
+      </header>
+      <ul class="superfan-modal__perks" id="superfan-modal-perks">
+        <li>Dostęp do <strong>wszystkich zdjęć i filmów</strong> tej koleżanki</li>
+        <li><strong>Nielimitowany czat</strong> — rozmawiaj bez limitu czasu</li>
+        <li>Subskrypcja przypisana do <strong id="superfan-modal-name">koleżanki</strong></li>
+      </ul>
+      <p class="superfan-modal__price"><span>Cena</span> <strong>59,99 zł</strong></p>
+      <button type="button" class="btn btn--superfan btn--full" id="superfan-purchase-btn">Kup SuperFan — 59,99 zł</button>
       <p class="token-modal__note">Płatność demo — po integracji podłącz bramkę płatności.</p>
     </div>
   </div>
