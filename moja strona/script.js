@@ -897,6 +897,11 @@ let activeInboxId = null;
 
 /** Uniwersalny link polecający — podmień na swój URL lub zostaw placeholder (wtedy używa adresu strony) */
 const INVITE_LINK_BASE = '#INVITE_LINK_HERE';
+const REFERRAL_LINK_MASK = 'Link ukryty — użyj przycisku Kopiuj';
+
+function getReferralLinkDisplayValue() {
+  return getCurrentUser() ? REFERRAL_LINK_MASK : '—';
+}
 
 function getInviteReferralLink() {
   const user = getCurrentUser();
@@ -961,7 +966,7 @@ function showInviteLinkPanel() {
   const input = document.getElementById('invite-link-input');
   if (!panel || !input) return;
 
-  input.value = getInviteReferralLink();
+  input.value = getReferralLinkDisplayValue();
   panel.hidden = false;
 }
 
@@ -971,14 +976,16 @@ function hideInviteLinkPanel() {
 }
 
 async function copyInviteLink() {
-  const input = document.getElementById('invite-link-input');
-  const link = input?.value || getInviteReferralLink();
+  if (!getCurrentUser()) {
+    showToast('Zaloguj się, aby skopiować link polecający.');
+    return;
+  }
+  const link = getInviteReferralLink();
   try {
     await navigator.clipboard.writeText(link);
     showToast('Link skopiowany do schowka.');
   } catch {
-    input?.select();
-    showToast('Zaznaczono link — skopiuj ręcznie (Ctrl+C).');
+    showToast('Nie udało się skopiować linku — spróbuj ponownie.');
   }
 }
 
@@ -2260,7 +2267,7 @@ function setAuthPanelMode(mode) {
   if (subtitle) {
     subtitle.textContent = isLogin
       ? 'Wpisz login lub e-mail oraz hasło.'
-      : 'Nazwa użytkownika (krótka), e-mail i hasło — załóż konto na DyskiHub.pl.';
+      : 'Nazwa użytkownika (krótka), e-mail i hasło — załóż konto.';
   }
 
   if (regPanel) regPanel.hidden = isLogin;
@@ -2315,7 +2322,7 @@ function updateRegisterUI() {
       adminLink.style.display = isAdmin ? '' : 'none';
     }
     const inviteInput = document.getElementById('invite-link-input');
-    if (inviteInput) inviteInput.value = getInviteReferralLink();
+    if (inviteInput) inviteInput.value = getReferralLinkDisplayValue();
   } else {
     if (adminLink) {
       adminLink.hidden = true;
@@ -3400,7 +3407,7 @@ function refreshReferralPageData() {
   }
 
   if (referralInput) {
-    referralInput.value = user ? getInviteReferralLink() : '—';
+    referralInput.value = getReferralLinkDisplayValue();
   }
 
   document.querySelectorAll('.referral-tier').forEach((tierEl) => {
@@ -3411,17 +3418,16 @@ function refreshReferralPageData() {
 
 async function copyAccountReferralLink() {
   const input = document.getElementById('account-referral-input');
-  const link = input?.value || getInviteReferralLink();
   if (!getCurrentUser()) {
     showToast('Zaloguj się, aby skopiować link polecający.');
     return;
   }
+  const link = getInviteReferralLink();
   try {
     await navigator.clipboard.writeText(link);
     showToast('Link skopiowany do schowka.');
   } catch {
-    input?.select();
-    showToast('Zaznaczono link — skopiuj ręcznie (Ctrl+C).');
+    showToast('Nie udało się skopiować linku — spróbuj ponownie.');
   }
 }
 
