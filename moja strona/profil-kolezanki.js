@@ -176,21 +176,22 @@ function renderProfileHeader() {
 function buildPhotoCard(photo) {
   const unlocked = state.unlocked.has(photo.key);
   const isUnlocking = state.loadingUnlock.has(photo.key);
-  const lockText = unlocked
-    ? 'Odblokowane'
-    : isUnlocking
-      ? 'Odblokowuję…'
-      : `Odblokuj za ${PHOTO_UNLOCK_COST} żetonów`;
+  const lockText = isUnlocking ? 'Odblokowuję…' : `Odblokuj za ${PHOTO_UNLOCK_COST} żetonów`;
+  const overlayHtml = unlocked
+    ? ''
+    : `
+        <div class="profile-gallery-card__overlay">
+          <button type="button" class="btn profile-gallery-card__unlock" data-photo-key="${photo.key}" ${isUnlocking ? 'disabled' : ''}>
+            ${lockText}
+          </button>
+        </div>
+      `;
 
   return `
     <article class="profile-gallery-card${unlocked ? ' is-unlocked' : ''}">
       <div class="profile-gallery-card__photo-wrap${unlocked ? '' : ' is-locked'}">
         <img src="${photo.src}" alt="Zdjęcie profilowe" class="profile-gallery-card__photo${unlocked ? '' : ' is-blurred'}" loading="lazy">
-        <div class="profile-gallery-card__overlay"${unlocked ? ' hidden' : ''}>
-          <button type="button" class="btn profile-gallery-card__unlock" data-photo-key="${photo.key}" ${isUnlocking ? 'disabled' : ''}>
-            ${lockText}
-          </button>
-        </div>
+        ${overlayHtml}
       </div>
     </article>
   `;
