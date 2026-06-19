@@ -17,7 +17,12 @@ const state = {
   wins: 0,
   losses: 0,
   history: [],
+  canFlip: true,
+  nextFlipAt: null,
+  secondsRemaining: 0,
 };
+
+let countdownTimer = null;
 
 function isLoggedIn() {
   return Boolean(window.DyskiAuth?.getAccessToken?.());
@@ -52,6 +57,60 @@ function saveStats() {
 
 function saveHistory() {
   localStorage.setItem(getHistoryStorageKey(), JSON.stringify(state.history.slice(0, 20)));
+}
+
+function formatCountdown(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function applyFlipStatus(data) {
+  state.canFlip = Boolean(data.canFlip);
+  state.nextFlipAt = data.nextFlipAt || null;
+  state.secondsRemaining = data.secondsRemaining || 0;
+  updateCooldownUI();
+}
+
+function updateCooldownUI() {
+  const countdownEl = document.getElementById('coinflip-countdown');
+  if (!isLoggedIn()) {
+    if (countdownEl) countdownEl.hidden = true;
+    return;
+  }
+
+  if (state.canFlip && !state.flipping) {
+    if (countdownEl) countdownEl.hidden = true;
+    return;
+  }
+
+  if (state.secondsRemaining > 0 && countdownEl) {
+    countdownEl.hidden = false;
+    countdownEl.textContent = `Następny rzut za: ${formatCountdown(state.secondsRemaining)}`;
+  } else if (countdownEl) {
+    countdownEl.hidden = true;
+  }
+}
+
+function startCountdownTicker() {
+  clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    if (state.canFlip || !state.nextFlipAt) {
+      updateCooldownUI();
+      updateFlipButton();
+      return;
+    }
+    const remaining = Math.ceil((new Date(state.nextFlipAt).getTime() - Date.now()) / 1000);
+    state.secondsRemaining = Math.max(0, remaining);
+    if (state.secondsRemaining <= 0) {
+      state.canFlip = true;
+      state.nextFlipAt = null;
+    }
+    updateCooldownUI();
+    updateFlipButton();
+  }, 1000);
 }
 
 function getBalance() {
@@ -174,18 +233,33 @@ function updateFlipButton() {
   const hint = document.getElementById('coinflip-flip-hint');
   const guest = document.getElementById('coinflip-guest-hint');
   const loggedIn = isLoggedIn();
-  const canFlip = loggedIn && !state.flipping && state.choice && getBalance() >= state.bet && state.bet >= MIN_BET;
+  const onCooldown = loggedIn && !state.canFlip && state.secondsRemaining > 0;
+  const canFlip =
+    loggedIn &&
+    !state.flipping &&
+    state.canFlip &&
+    state.choice &&
+    getBalance() >= state.bet &&
+    state.bet >= MIN_BET;
 
   if (guest) guest.hidden = loggedIn;
   if (btn) {
     btn.hidden = !loggedIn;
     btn.disabled = !canFlip;
-    btn.textContent = state.flipping ? 'Rzucam…' : 'Rzuć monetą';
+    if (state.flipping) {
+      btn.textContent = 'Rzucam…';
+    } else if (onCooldown) {
+      btn.textContent = 'Poczekaj na cooldown';
+    } else {
+      btn.textContent = 'Rzuć monetą';
+    }
   }
 
   if (hint && loggedIn) {
     if (state.flipping) {
       hint.textContent = 'Moneta w powietrzu…';
+    } else if (onCooldown) {
+      hint.textContent = 'Jeden rzut na dobę — wróć po odliczeniu';
     } else if (!state.choice) {
       hint.textContent = 'Wybierz stronę monety';
     } else if (getBalance() < state.bet) {
@@ -194,6 +268,8 @@ function updateFlipButton() {
       hint.textContent = `Postawiono na: ${choiceLabel(state.choice)}`;
     }
   }
+
+  updateCooldownUI();
 }
 
 function updateGuestUI() {
@@ -240,18 +316,18 @@ async function getAuthToken() {
   return window.DyskiAuth?.getAccessToken?.() || null;
 }
 
-async function coinflipFetch(bet, choice) {
+async function coinflipFetch(method, body) {
   let token = await getAuthToken();
   if (!token) throw new Error('Zaloguj się, aby grać');
 
   async function request(accessToken) {
     return fetch(COINFLIP_API, {
-      method: 'POST',
+      method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
       },
-      body: JSON.stringify({ bet, choice }),
+      body: method === 'POST' ? JSON.stringify(body) : undefined,
     });
   }
 
@@ -278,8 +354,32 @@ async function coinflipFetch(bet, choice) {
     );
   }
 
-  if (!res.ok) throw new Error(data.error || 'Błąd coinflip');
+  if (!res.ok) {
+    const err = new Error(data.error || 'Błąd coinflip');
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
   return data;
+}
+
+async function refreshFlipStatus() {
+  if (!isLoggedIn()) {
+    state.canFlip = false;
+    state.nextFlipAt = null;
+    state.secondsRemaining = 0;
+    updateCooldownUI();
+    updateFlipButton();
+    return;
+  }
+
+  try {
+    const data = await coinflipFetch('GET');
+    applyFlipStatus(data);
+    updateFlipButton();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function playRound() {
@@ -298,6 +398,13 @@ async function playRound() {
     return;
   }
 
+  if (!state.canFlip) {
+    if (typeof showToast === 'function') {
+      showToast('Możesz rzucić monetą raz na 24 godziny.');
+    }
+    return;
+  }
+
   state.flipping = true;
   updateFlipButton();
   updateSideUI();
@@ -309,9 +416,15 @@ async function playRound() {
   if (resultEl) resultEl.hidden = true;
 
   try {
-    const data = await coinflipFetch(bet, choice);
+    const data = await coinflipFetch('POST', { bet, choice });
     window.DyskiAuth?.applyTokensFromServer?.(data.newTokens);
     await animateCoin(data.outcome);
+
+    applyFlipStatus({
+      canFlip: false,
+      nextFlipAt: data.nextFlipAt,
+      secondsRemaining: data.secondsRemaining || Math.ceil(24 * 60 * 60),
+    });
 
     if (typeof animateTokenBalance === 'function' && data.newTokens !== balanceBefore) {
       animateTokenBalance(balanceBefore, data.newTokens);
@@ -354,7 +467,12 @@ async function playRound() {
       );
     }
   } catch (err) {
-    if (typeof showToast === 'function') showToast(err.message || 'Nie udało się rozegrać rundy');
+    if (err.status === 429 && err.data) {
+      applyFlipStatus(err.data);
+      if (typeof showToast === 'function') showToast(err.message);
+    } else if (typeof showToast === 'function') {
+      showToast(err.message || 'Nie udało się rozegrać rundy');
+    }
     const coin = document.getElementById('coinflip-coin');
     coin?.classList.remove('is-flipping');
   } finally {
@@ -417,12 +535,16 @@ async function initCoinflip() {
   loadPersistedData();
   updateGuestUI();
 
+  await refreshFlipStatus();
+  startCountdownTicker();
+
   window.addEventListener('dyskihub-auth', () => {
     loadPersistedData();
     updateStatsUI();
     renderHistory();
     if (typeof syncTokenDisplay === 'function') syncTokenDisplay();
     updateGuestUI();
+    refreshFlipStatus();
   });
 }
 

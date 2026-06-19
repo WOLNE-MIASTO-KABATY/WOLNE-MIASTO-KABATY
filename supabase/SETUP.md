@@ -81,3 +81,23 @@ Po wdrożeniu funkcji `daily-spin` uruchom migrację kolumny cooldown:
 3. Kliknij **Run**
 
 Kolumna `profiles.last_daily_spin_at` jest wymagana do cooldownu 24h między spinami.
+
+## 11. Coinflip (cooldown 24h)
+
+Po wdrożeniu funkcji `coinflip` uruchom migrację:
+
+1. **SQL Editor** → **New query**
+2. Wklej zawartość [`migration-coinflip-cooldown.sql`](./migration-coinflip-cooldown.sql)
+3. Kliknij **Run**
+
+Kolumna `profiles.last_coinflip_at` jest wymagana do limitu jednego rzutu na dobę.
+
+## 12. Profile koleżanek (odblokowania zdjęć)
+
+Po wdrożeniu galerii profili uruchom migrację:
+
+1. **SQL Editor** → **New query**
+2. Wklej zawartość [`migration-profile-photo-unlocks.sql`](./migration-profile-photo-unlocks.sql)
+3. Kliknij **Run**
+
+Ta migracja dodaje tabelę trwałych odblokowań zdjęć i funkcję RPC `unlock_profile_photo`.

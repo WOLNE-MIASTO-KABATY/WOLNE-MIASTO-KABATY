@@ -16,6 +16,7 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_.\-\u00C0-\u024F]{3,32}$/;
 const USERNAME_MAX_LEN = 32;
 
 const SIDEBAR_JOIN_LABEL = 'Zarejestruj się i otrzymaj darmowe 25 żetonów';
+const ACCOUNT_REGISTER_CTA_LABEL = 'Zarejestruj się i odbierz darmowe 25 żetonów';
 
 const TOKEN_PACKAGES = [
   { id: 'pack-20', tokens: 20, bonusTokens: 0, price: '10,00 zł', popular: false },
@@ -1000,6 +1001,10 @@ function getAffiliateHref(id) {
 
 const openChats = new Map();
 
+function openProfilePage(profileId) {
+  window.location.href = `profil-kolezanki.html?id=${profileId}`;
+}
+
 function renderProfiles() {
   const grid = document.getElementById('profile-grid');
   if (!grid) return;
@@ -1014,12 +1019,12 @@ function renderProfiles() {
     const id = Number(card.dataset.profileId);
     card.addEventListener('click', (e) => {
       if (e.target.closest('.profile-card__btn--chat, .profile-card__btn--ended, .profile-card__btn--cooldown')) return;
-      openInbox(id);
+      openProfilePage(id);
     });
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        openInbox(id);
+        openProfilePage(id);
       }
     });
   });
@@ -2443,6 +2448,14 @@ function initRegister() {
     else openAuthModal('register');
   });
 
+  document.querySelectorAll('.js-open-auth-register').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (getCurrentUser()) return;
+      openAuthModal('register');
+    });
+  });
+
   document.getElementById('auth-modal-close')?.addEventListener('click', closeAuthModal);
   document.getElementById('auth-modal-backdrop')?.addEventListener('click', closeAuthModal);
 
@@ -2689,6 +2702,13 @@ function openInbox(profileId = null) {
   }
 }
 
+function getInboxProfileIdFromUrl() {
+  const params = new URLSearchParams(window.location.search || '');
+  const id = Number(params.get('inbox'));
+  if (!Number.isFinite(id) || id < 1) return null;
+  return getProfile(id) ? id : null;
+}
+
 function closeInbox() {
   const inbox = document.getElementById('inbox');
   if (!inbox) return;
@@ -2893,7 +2913,7 @@ function initInbox() {
   });
 
   if (window.location.hash === '#messages') {
-    openInbox();
+    openInbox(getInboxProfileIdFromUrl());
   }
 
   window.addEventListener('pageshow', () => {
@@ -2906,7 +2926,7 @@ function initInbox() {
   window.addEventListener('hashchange', () => {
     const inboxEl = document.getElementById('inbox');
     if (window.location.hash === '#messages') {
-      if (!inboxEl?.classList.contains('is-open')) openInbox();
+      if (!inboxEl?.classList.contains('is-open')) openInbox(getInboxProfileIdFromUrl());
     } else if (inboxEl?.classList.contains('is-open')) {
       inboxEl.classList.remove('is-open');
       inboxEl.setAttribute('aria-hidden', 'true');
@@ -3311,6 +3331,12 @@ function refreshAccountPageData() {
   set('account-email', user ? user.email : '—');
   set('account-tokens', getTokenBalance().toLocaleString('pl-PL'));
   syncTokenDisplay();
+
+  const registerCta = document.getElementById('account-register-cta');
+  if (registerCta) {
+    registerCta.hidden = Boolean(user);
+    registerCta.textContent = ACCOUNT_REGISTER_CTA_LABEL;
+  }
 }
 
 function refreshReferralPageData() {

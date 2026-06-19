@@ -7,6 +7,7 @@ const {
 
 const MIN_BET = 5;
 const MAX_BET = 10000;
+const COINFLIP_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 async function verifyUserToken(event) {
   const authHeader = event.headers.authorization || event.headers.Authorization;
@@ -41,18 +42,49 @@ async function verifyUserToken(event) {
   return { userId: user.id };
 }
 
+function computeFlipStatus(lastFlipAt) {
+  if (!lastFlipAt) {
+    return { canFlip: true, nextFlipAt: null, secondsRemaining: 0 };
+  }
+
+  const last = new Date(lastFlipAt).getTime();
+  const next = last + COINFLIP_COOLDOWN_MS;
+  const now = Date.now();
+
+  if (now >= next) {
+    return { canFlip: true, nextFlipAt: null, secondsRemaining: 0 };
+  }
+
+  return {
+    canFlip: false,
+    nextFlipAt: new Date(next).toISOString(),
+    secondsRemaining: Math.ceil((next - now) / 1000),
+  };
+}
+
 async function fetchProfile(userId) {
   const supabaseUrl = getSupabaseUrl();
   const headers = { ...getServiceHeaders(), Accept: 'application/json' };
 
-  const res = await fetch(
-    `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,tokens&limit=1`,
+  let res = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,tokens,last_coinflip_at&limit=1`,
     { headers }
   );
 
+  if (!res.ok) {
+    res = await fetch(
+      `${supabaseUrl}/rest/v1/profiles?id=eq.${userId}&select=id,tokens&limit=1`,
+      { headers }
+    );
+  }
+
   if (!res.ok) throw new Error('profile_fetch_failed');
   const rows = await res.json();
-  return rows[0] || null;
+  const profile = rows[0] || null;
+  if (profile && profile.last_coinflip_at === undefined) {
+    profile.last_coinflip_at = null;
+  }
+  return profile;
 }
 
 exports.handler = async (event) => {
@@ -60,39 +92,52 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: corsHeaders, body: '' };
   }
 
-  if (event.httpMethod !== 'POST') {
+  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
     return jsonResponse(405, { error: 'Method not allowed' });
   }
 
   const auth = await verifyUserToken(event);
   if (auth.error) return auth.error;
 
-  let body = {};
-  try {
-    body = JSON.parse(event.body || '{}');
-  } catch {
-    return jsonResponse(400, { error: 'Nieprawidłowe dane żądania' });
-  }
-
-  const bet = Math.floor(Number(body.bet));
-  const choice = body.choice;
-
-  if (!Number.isFinite(bet) || bet < MIN_BET) {
-    return jsonResponse(400, { error: `Minimalna stawka to ${MIN_BET} żetonów` });
-  }
-
-  if (bet > MAX_BET) {
-    return jsonResponse(400, { error: `Maksymalna stawka to ${MAX_BET.toLocaleString('pl-PL')} żetonów` });
-  }
-
-  if (choice !== 'heads' && choice !== 'tails') {
-    return jsonResponse(400, { error: 'Wybierz orzeł lub reszkę' });
-  }
-
   try {
     const profile = await fetchProfile(auth.userId);
     if (!profile) {
       return jsonResponse(404, { error: 'Nie znaleziono profilu' });
+    }
+
+    const status = computeFlipStatus(profile.last_coinflip_at);
+
+    if (event.httpMethod === 'GET') {
+      return jsonResponse(200, status);
+    }
+
+    if (!status.canFlip) {
+      return jsonResponse(429, {
+        error: 'Możesz rzucić monetą raz na 24 godziny',
+        ...status,
+      });
+    }
+
+    let body = {};
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return jsonResponse(400, { error: 'Nieprawidłowe dane żądania' });
+    }
+
+    const bet = Math.floor(Number(body.bet));
+    const choice = body.choice;
+
+    if (!Number.isFinite(bet) || bet < MIN_BET) {
+      return jsonResponse(400, { error: `Minimalna stawka to ${MIN_BET} żetonów` });
+    }
+
+    if (bet > MAX_BET) {
+      return jsonResponse(400, { error: `Maksymalna stawka to ${MAX_BET.toLocaleString('pl-PL')} żetonów` });
+    }
+
+    if (choice !== 'heads' && choice !== 'tails') {
+      return jsonResponse(400, { error: 'Wybierz orzeł lub reszkę' });
     }
 
     const balance = profile.tokens || 0;
@@ -103,6 +148,8 @@ exports.handler = async (event) => {
     const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
     const won = outcome === choice;
     const newTokens = balance - bet + (won ? bet * 2 : 0);
+    const nowIso = new Date().toISOString();
+    const nextFlipAt = new Date(Date.now() + COINFLIP_COOLDOWN_MS).toISOString();
 
     const supabaseUrl = getSupabaseUrl();
     const headers = getServiceHeaders();
@@ -110,7 +157,10 @@ exports.handler = async (event) => {
     const patchRes = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${auth.userId}`, {
       method: 'PATCH',
       headers: { ...headers, Prefer: 'return=representation' },
-      body: JSON.stringify({ tokens: newTokens }),
+      body: JSON.stringify({
+        tokens: newTokens,
+        last_coinflip_at: nowIso,
+      }),
     });
 
     if (!patchRes.ok) {
@@ -126,6 +176,9 @@ exports.handler = async (event) => {
       bet,
       profit: won ? bet : -bet,
       newTokens,
+      canFlip: false,
+      nextFlipAt,
+      secondsRemaining: Math.ceil(COINFLIP_COOLDOWN_MS / 1000),
     });
   } catch (err) {
     console.error(err);

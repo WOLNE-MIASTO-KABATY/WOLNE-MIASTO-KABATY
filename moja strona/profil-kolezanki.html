@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="DyskiHub.pl — Twoje konto">
-  <title>DyskiHub.pl — Konto</title>
+  <meta name="description" content="DyskiHub.pl — Profil koleżanki i odblokowanie zdjęć.">
+  <title>DyskiHub.pl — Profil koleżanki</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="page-account">
+<body class="page-profile-gallery">
   <div class="app-shell" id="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__head">
@@ -22,7 +22,7 @@
         </div>
         <a href="index.html#hero" class="sidebar__logo">
           <span class="sidebar__logo-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-k)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-k" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
+            <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" fill="url(#lg-profile-gallery)"/><path d="M16 10v12M12 14h6.2a1.4 1.4 0 0 1 0 2.8H12" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><defs><linearGradient id="lg-profile-gallery" x1="8" y1="6" x2="24" y2="26"><stop stop-color="#3b82f6"/><stop offset="1" stop-color="#1d4f9e"/></linearGradient></defs></svg>
           </span>
           <span class="sidebar__logo-text">DyskiHub.pl</span>
         </a>
@@ -33,19 +33,19 @@
         <div class="sidebar__wallet-stack">
           <span class="sidebar__wallet-label">Żetony</span>
           <div class="wallet wallet--sidebar" id="wallet">
-          <button type="button" class="wallet__trigger wallet__trigger--pill" id="wallet-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="wallet-dropdown">
-            <span class="wallet__pill-icon" aria-hidden="true">◆</span>
-            <span class="wallet__balance" id="token-balance">0</span>
-          </button>
-          <div class="wallet__dropdown wallet__dropdown--sidebar" id="wallet-dropdown" hidden>
-            <div class="wallet__dropdown-head">
-              <span class="wallet__dropdown-title">Twoje żetony</span>
-              <span class="wallet__dropdown-amount" id="token-balance-dropdown">0</span>
+            <button type="button" class="wallet__trigger wallet__trigger--pill" id="wallet-trigger" aria-expanded="false" aria-haspopup="true" aria-controls="wallet-dropdown">
+              <span class="wallet__pill-icon" aria-hidden="true">◆</span>
+              <span class="wallet__balance" id="token-balance">0</span>
+            </button>
+            <div class="wallet__dropdown wallet__dropdown--sidebar" id="wallet-dropdown" hidden>
+              <div class="wallet__dropdown-head">
+                <span class="wallet__dropdown-title">Twoje żetony</span>
+                <span class="wallet__dropdown-amount" id="token-balance-dropdown">0</span>
+              </div>
+              <p class="wallet__dropdown-hint">Żetony odblokowują wiadomości premium i priorytetowe czaty.</p>
+              <button type="button" class="btn btn--primary btn--full js-open-token-shop">Doładuj konto</button>
             </div>
-            <p class="wallet__dropdown-hint">Żetony odblokowują wiadomości premium i priorytetowe czaty.</p>
-            <button type="button" class="btn btn--primary btn--full js-open-token-shop">Doładuj konto</button>
           </div>
-        </div>
           <button type="button" class="sidebar__premium-btn" id="sidebar-premium-btn">Kup Premium</button>
         </div>
       </div>
@@ -135,7 +135,7 @@
               <span class="topbar__profile-avatar" id="profile-menu-avatar" aria-hidden="true">G</span>
             </button>
             <div class="profile-menu__dropdown" id="profile-menu-dropdown" hidden>
-              <a href="konto.html" class="profile-menu__item profile-menu__item--link is-active" id="profile-menu-account">Konto</a>
+              <a href="konto.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-account">Konto</a>
               <a href="ustawienia.html" class="profile-menu__item profile-menu__item--link" id="profile-menu-settings">Ustawienia</a>
               <a href="/admin.html" class="profile-menu__item profile-menu__item--link profile-menu__item--admin" id="profile-menu-admin" hidden>Panel admina</a>
               <button type="button" class="profile-menu__item profile-menu__item--logout" id="profile-menu-logout">Wyloguj</button>
@@ -146,39 +146,25 @@
 
       <div class="app-main__scroll">
         <div class="page-center">
-          <section class="account-page" id="account-page">
-            <a href="index.html" class="account-page__back">← Wróć na stronę główną</a>
-            <div class="account-dashboard">
-              <nav class="account-dashboard__nav" role="tablist" aria-label="Panel konta">
-                <button type="button" class="account-dashboard__tab is-active" id="account-tab-btn-konto" role="tab" aria-selected="true" aria-controls="account-tab-konto" data-account-tab="konto">Konto</button>
-                <a href="ustawienia.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-settings">Ustawienia konta</a>
-                <a href="linki-referencyjne.html" class="account-dashboard__tab account-dashboard__tab--link" id="account-tab-btn-referral">Linki referencyjne</a>
-              </nav>
-              <div class="account-dashboard__content">
-                <div class="account-dashboard__panel" id="account-tab-konto" role="tabpanel" aria-labelledby="account-tab-btn-konto">
-                  <h1 class="account-page__title">Twoje konto</h1>
-                  <p class="account-page__subtitle">Podgląd danych tylko dla zalogowanego użytkownika .</p>
-                  <dl class="account-page__list">
-                    <div class="account-page__row">
-                      <dt class="account-page__label">Login</dt>
-                      <dd class="account-page__value" id="account-username">Gość</dd>
-                    </div>
-                    <div class="account-page__row">
-                      <dt class="account-page__label">E-mail</dt>
-                      <dd class="account-page__value" id="account-email">—</dd>
-                    </div>
-                    <div class="account-page__row">
-                      <dt class="account-page__label">Żetony</dt>
-                      <dd class="account-page__value" id="account-tokens">0</dd>
-                    </div>
-                  </dl>
-                  <div class="account-page__actions">
-                    <button type="button" class="btn btn--primary js-open-token-shop">Doładuj żetony</button>
-                    <button type="button" class="btn btn--register-promo js-open-auth-register" id="account-register-cta">Zarejestruj się i odbierz darmowe 25 żetonów</button>
-                  </div>
-                </div>
+          <section class="profile-gallery-page" id="profile-gallery-page">
+            <a href="index.html#profiles" class="profile-gallery-page__back">← Wróć do profili</a>
+
+            <header class="profile-gallery-hero">
+              <img src="images/profiles/natalia.png" alt="" class="profile-gallery-hero__avatar" id="profile-gallery-avatar" width="84" height="84">
+              <div class="profile-gallery-hero__meta">
+                <h1 class="profile-gallery-hero__title" id="profile-gallery-name">Profil koleżanki</h1>
+                <p class="profile-gallery-hero__sub" id="profile-gallery-city">—</p>
+                <p class="profile-gallery-hero__bio" id="profile-gallery-bio">Ładowanie profilu…</p>
               </div>
-            </div>
+              <a href="index.html#messages" class="btn btn--primary profile-gallery-hero__write" id="profile-gallery-write-btn">Napisz</a>
+            </header>
+
+            <p class="profile-gallery-page__hint">
+              Wszystkie zdjęcia są zablokowane. Odblokowanie jednego zdjęcia kosztuje <strong>20 żetonów</strong>.
+            </p>
+
+            <div class="profile-gallery-grid" id="profile-gallery-grid"></div>
+            <p class="profile-gallery-page__empty" id="profile-gallery-empty" hidden>Brak zdjęć w tym profilu.</p>
           </section>
         </div>
       </div>
@@ -225,7 +211,7 @@
           <button type="submit" class="btn btn--primary btn--full">Zaloguj się</button>
         </form>
       </div>
-      <p class="auth-modal__note">Konto demo — dane zapisywane lokalnie w przeglądarce.</p>
+      <p class="auth-modal__note">Konto na DyskiHub.pl — bezpieczna rejestracja i logowanie.</p>
     </div>
   </div>
 
@@ -271,5 +257,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="auth.js"></script>
   <script src="script.js"></script>
+  <script src="profil-kolezanki.js"></script>
 </body>
 </html>
