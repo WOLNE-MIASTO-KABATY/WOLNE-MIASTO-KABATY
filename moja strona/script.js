@@ -15,6 +15,8 @@ const DEFAULT_TOKENS = 25;
 const USERNAME_REGEX = /^[a-zA-Z0-9_.\-\u00C0-\u024F]{3,32}$/;
 const USERNAME_MAX_LEN = 32;
 
+const SIDEBAR_JOIN_LABEL = 'Zarejestruj się i otrzymaj darmowe 25 żetonów';
+
 const TOKEN_PACKAGES = [
   { id: 'pack-20', tokens: 20, bonusTokens: 0, price: '10,00 zł', popular: false },
   { id: 'pack-50', tokens: 50, bonusTokens: 0, price: '20,00 zł', popular: false },
@@ -2266,7 +2268,7 @@ function updateRegisterUI() {
       adminLink.style.display = 'none';
     }
     toggle.hidden = false;
-    toggle.textContent = 'Dołącz za darmo →';
+    toggle.textContent = SIDEBAR_JOIN_LABEL;
     if (inviteHint) inviteHint.hidden = true;
     if (inviteBtn) inviteBtn.hidden = true;
     hideInviteLinkPanel();

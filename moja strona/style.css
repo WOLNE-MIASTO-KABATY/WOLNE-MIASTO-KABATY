@@ -3756,21 +3756,25 @@ body::after {
 }
 
 .btn--sidebar-join {
-  border-radius: 3px !important;
-  font-size: 0.58rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  padding: 0.55rem 0.85rem !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+  padding: 0.85rem 1rem !important;
+  min-height: 3.25rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(29, 79, 158, 0.45)) !important;
   color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow: none !important;
+  border: 1px solid rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2) !important;
 }
 
 .btn--sidebar-join:hover {
-  background: rgba(255, 255, 255, 0.16) !important;
-  border-color: rgba(255, 255, 255, 0.24) !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.48), rgba(29, 79, 158, 0.55)) !important;
+  border-color: rgba(147, 197, 253, 0.55) !important;
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.28) !important;
 }
 
 .btn--sidebar-join[hidden] {
