@@ -157,6 +157,14 @@ const CONTENT_HUB_ITEMS = {
     previewPosition: '88% top',
     meta: '60 stron',
   },
+  'comic-simpsonowie': {
+    type: 'comic',
+    cost: COMIC_UNLOCK_COST,
+    name: 'Simpsonowie',
+    image: 'images/comics/simpsonowie.png',
+    previewPosition: 'center top',
+    meta: '480 stron',
+  },
 };
 
 let pendingDiscPurchase = null;
@@ -2930,6 +2938,7 @@ function initInbox() {
   const input = document.getElementById('inbox-thread-input');
 
   openBtn?.addEventListener('click', (e) => {
+    if (!document.getElementById('inbox')) return;
     e.preventDefault();
     openInbox();
   });
