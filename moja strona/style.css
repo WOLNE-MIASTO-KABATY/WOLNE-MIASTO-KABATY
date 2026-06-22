@@ -8292,6 +8292,58 @@ button.profile-card__btn--chat {
   font-size: 0.95rem;
 }
 
+.profile-gallery-hero__social {
+  margin-top: 0.55rem;
+}
+
+.profile-social {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-social__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.profile-social__btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.profile-social__btn--instagram {
+  background: linear-gradient(145deg, rgba(225, 48, 108, 0.22), rgba(131, 58, 180, 0.22));
+  color: #fce7f3;
+}
+
+.profile-social__btn--instagram:hover {
+  background: linear-gradient(145deg, rgba(225, 48, 108, 0.35), rgba(131, 58, 180, 0.35));
+}
+
+.profile-social__btn--telegram {
+  background: rgba(34, 158, 217, 0.2);
+  color: #bae6fd;
+}
+
+.profile-social__btn--telegram:hover {
+  background: rgba(34, 158, 217, 0.32);
+}
+
+.profile-card--catalog .profile-social {
+  margin: 0;
+}
+
 .profile-gallery-hero__write {
   min-width: 130px;
 }

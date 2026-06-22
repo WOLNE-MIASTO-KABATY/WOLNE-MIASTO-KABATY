@@ -37,8 +37,6 @@ const DISC_GRID_PHOTOS = [
   'images/discs/disc-3.png',
   'images/discs/disc-4.png',
   'images/discs/disc-5.png',
-  'images/discs/disc-6.png',
-  'images/discs/disc-7.png',
   'images/discs/disc-8.png',
   'images/discs/disc-9.png',
   'images/discs/disc-10.png',
@@ -57,8 +55,6 @@ const DISC_GRID_PHOTOS = [
 const DISC_PHOTO_POSITIONS = {
   'images/discs/disc-2.png': 'center 18%',
   'images/discs/disc-5.png': '68% 22%',
-  'images/discs/disc-6.png': 'center 24%',
-  'images/discs/disc-7.png': 'center 20%',
   'images/discs/disc-8.png': 'center 22%',
   'images/discs/disc-9.png': 'center 20%',
   'images/discs/disc-10.png': '72% 22%',
@@ -67,7 +63,7 @@ const DISC_PHOTO_POSITIONS = {
   'images/discs/disc-13.png': '32% 22%',
   'images/discs/disc-14.png': 'center 20%',
   'images/discs/disc-15.png': 'center 22%',
-  'images/discs/disc-16.png': 'center 22%',
+  'images/discs/disc-16.png': 'center 20%',
   'images/discs/disc-17.png': 'center 26%',
   'images/discs/disc-18.png': 'center 30%',
   'images/discs/disc-19.png': 'center 38%',
@@ -89,6 +85,32 @@ function getDiscCreatorName(gridIndex) {
   return DISC_GRID_NAMES[gridIndex] || `Dysk ${gridIndex + 1}`;
 }
 
+/** Linki MediaFire — indeks jak DISC_GRID_PHOTOS / DISC_GRID_NAMES */
+const DISC_MEDIA_LINKS = [
+  'https://www.mediafire.com/folder/evjqi5c4phpkk/FAGATA',
+  'https://www.mediafire.com/folder/o4l4ata1vtmrx/NATSU',
+  'https://www.mediafire.com/folder/0mx28sna6wvi5/SZWACZKA',
+  'https://www.mediafire.com/folder/7w2zkik2owxcu/BADGIRLSANDRA',
+  'https://www.mediafire.com/folder/i1mqs6cpbsyrg/GUZIK',
+  'https://www.mediafire.com/folder/o77t738nwz2xo/LLEASY',
+  'https://www.mediafire.com/folder/zsi72g3b9wz4i/MASHA',
+  'https://www.mediafire.com/folder/a44yn0867byo1/SHEEYA',
+  'https://www.mediafire.com/folder/ok0ickxmf6nxh/SONGHELI',
+  'https://www.mediafire.com/folder/4zm752gm88osk/WIKA+99',
+  'https://www.mediafire.com/folder/cvvokb2ioygil/KLAUDUSIEK',
+  'https://www.mediafire.com/folder/rxeir823l9ixc/JAWOROWA',
+  'https://www.mediafire.com/folder/o31147nyboo01/AMOURANTH',
+  'https://www.mediafire.com/folder/ghdacts9gxzy2/SOPHIERAIN',
+  'https://www.mediafire.com/folder/ott8eyzkra6zh/QOTB',
+  'https://www.mediafire.com/folder/pfsnllail7hl8/HANNAHOWO',
+  'https://www.mediafire.com/folder/86z1cpqez2j7g/BELLE+DELPHINE',
+];
+
+function getDiscLinkByGridIndex(gridIndex) {
+  const url = DISC_MEDIA_LINKS[gridIndex];
+  return typeof url === 'string' && /^https?:\/\//i.test(url) ? url : '';
+}
+
 /** Dyski w karuzeli hero — gridIndex łączy ze zdjęciem i stanem odblokowania siatki */
 const DISC_CAROUSEL_ITEMS = [
   { packId: 'pack-50', discName: 'Dysk Fagata', tag: 'Fagata', popular: true, gridIndex: 0 },
@@ -96,19 +118,20 @@ const DISC_CAROUSEL_ITEMS = [
   { packId: 'pack-300', discName: 'Dysk Vanessaszwaczka', tag: 'Vanessaszwaczka', gridIndex: 2 },
   { packId: 'pack-50', discName: 'Dysk BadGirlSandra', tag: 'BadGirlSandra', gridIndex: 3 },
   { packId: 'pack-120', discName: 'Dysk Julka Guzik', tag: 'Julka', popular: true, gridIndex: 4 },
-  { packId: 'pack-300', discName: 'Dysk HannahOwO', tag: 'HannahOwO', gridIndex: 17 },
-  { packId: 'pack-50', discName: 'Dysk Songheli', tag: 'Songheli', gridIndex: 10 },
+  { packId: 'pack-300', discName: 'Dysk HannahOwO', tag: 'HannahOwO', gridIndex: 15 },
+  { packId: 'pack-50', discName: 'Dysk Songheli', tag: 'Songheli', gridIndex: 8 },
 ].map((item) => ({
   ...item,
   image: DISC_GRID_PHOTOS[item.gridIndex],
   discId: `disc-grid-${item.gridIndex}`,
+  link: getDiscLinkByGridIndex(item.gridIndex),
 }));
 
 const DISC_GRID_NAMES = [
   'Fagata', 'Natsu', 'Vanessaszwaczka', 'BadGirlSandra', 'Julka Guzik',
-  'Hotjulcia', 'Amxnduh', 'Llleasy', 'Ultrafioletova', 'Sheeya',
-  'Songheli', 'Tanamongeau', 'Klaudusiek', 'Jaworowa', 'Amouranth',
-  'Sophieraiin', 'Mia_tattoo', 'HannahOwO', 'BelleDelphine',
+  'Llleasy', 'Masha', 'Sheeya',
+  'Songheli', 'wika99', 'Klaudusiek', 'Jaworowa', 'Amouranth',
+  'Sophieraiin', 'QOTB', 'HannahOwO', 'BelleDelphine',
 ];
 
 const DISC_UNLOCK_COST = 20;
@@ -459,6 +482,7 @@ function getDiscGridItems() {
     tag: String(i + 1),
     image: photo,
     gridIndex: i,
+    link: getDiscLinkByGridIndex(i),
   })).sort((a, b) => {
     const aUnlocked = isDiscUnlocked(a.discId);
     const bUnlocked = isDiscUnlocked(b.discId);
@@ -516,8 +540,37 @@ function getProfileAvatarPath(id) {
 }
 window.getProfileAvatarPath = getProfileAvatarPath;
 
+/** Profile z ikonami Instagram / Telegram (linki — wkrótce) */
+const PROFILE_SOCIAL_IDS = new Set([1, 2, 9]);
+
+const PROFILE_SOCIAL_SVG = {
+  instagram: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M7.8 2h8.4A5.8 5.8 0 0 1 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8A5.8 5.8 0 0 1 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm0 2A3.8 3.8 0 0 0 4 7.8v8.4A3.8 3.8 0 0 0 7.8 20h8.4a3.8 3.8 0 0 0 3.8-3.8V7.8A3.8 3.8 0 0 0 16.2 4H7.8zm9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>',
+  telegram: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M9.78 15.03 9.5 19.5c.45 0 .65-.19.88-.42l2.12-2.03 4.4 3.23c.81.45 1.39.21 1.6-.75l2.88-13.52h.01c.26-1.21-.44-1.68-1.24-1.39L2.6 9.44c-1.18.46-1.16 1.12-.2 1.42l4.98 1.55L18.9 6.1c.57-.38 1.08-.17.66.23"/></svg>',
+};
+
+function hasProfileSocial(profileId) {
+  return PROFILE_SOCIAL_IDS.has(Number(profileId));
+}
+
+function buildProfileSocialHtml(profileId) {
+  if (!hasProfileSocial(profileId)) return '';
+  return `
+    <div class="profile-social">
+      <button type="button" class="profile-social__btn profile-social__btn--instagram" data-social="instagram" data-profile-id="${profileId}" aria-label="Instagram" title="Instagram">
+        ${PROFILE_SOCIAL_SVG.instagram}
+      </button>
+      <button type="button" class="profile-social__btn profile-social__btn--telegram" data-social="telegram" data-profile-id="${profileId}" aria-label="Telegram" title="Telegram">
+        ${PROFILE_SOCIAL_SVG.telegram}
+      </button>
+    </div>
+  `;
+}
+
+window.buildProfileSocialHtml = buildProfileSocialHtml;
+window.hasProfileSocial = hasProfileSocial;
+
 const DEFAULT_PROFILES_DATA = [
-  { id: 1, imie: 'Natalcia', wiek: 18, miasto: 'WARSZAWA', bio: 'Tak jestem altką', aktywnosci: 142, status: 'online' },
+  { id: 1, imie: 'Paulincie', wiek: 18, miasto: 'WARSZAWA', bio: 'Tak jestem altką', aktywnosci: 142, status: 'online' },
   { id: 2, imie: 'Wikaa_', wiek: 19, miasto: 'KRAKÓW', bio: 'Hejka;) Zapraszam.', aktywnosci: 89, status: 'online' },
   { id: 3, imie: 'Monikapv', wiek: 18, miasto: 'WROCŁAW', bio: 'Co tam u ciebie;)', aktywnosci: 167, status: 'online' },
   { id: 4, imie: 'Weronikaaa', wiek: 19, miasto: 'WARSZAWA', bio: 'pvvvvv', aktywnosci: 203, status: 'online' },

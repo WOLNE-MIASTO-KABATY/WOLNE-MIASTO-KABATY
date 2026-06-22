@@ -9,7 +9,7 @@ const PHOTO_MAX_INDEX = 20;
 const PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 
 const FALLBACK_PROFILES = [
-  { id: 1, imie: 'Natalcia', wiek: 18, miasto: 'WARSZAWA', bio: 'Tak jestem altką' },
+  { id: 1, imie: 'Paulincie', wiek: 18, miasto: 'WARSZAWA', bio: 'Tak jestem altką' },
   { id: 2, imie: 'Wikaa_', wiek: 19, miasto: 'KRAKÓW', bio: 'Hejka;) Zapraszam.' },
   { id: 3, imie: 'Monikapv', wiek: 18, miasto: 'WROCŁAW', bio: 'Co tam u ciebie;)' },
   { id: 4, imie: 'Weronikaaa', wiek: 19, miasto: 'WARSZAWA', bio: 'pvvvvv' },
@@ -169,6 +169,11 @@ function renderProfileHeader() {
     if (bioEl) bioEl.textContent = 'Ten profil nie istnieje lub został usunięty.';
     if (writeBtn) writeBtn.hidden = true;
     document.getElementById('profile-gallery-superfan-btn')?.setAttribute('hidden', '');
+    const socialEl = document.getElementById('profile-gallery-social');
+    if (socialEl) {
+      socialEl.innerHTML = '';
+      socialEl.hidden = true;
+    }
     return;
   }
 
@@ -177,6 +182,16 @@ function renderProfileHeader() {
   if (titleEl) titleEl.textContent = `${p.imie || 'Koleżanka'}, ${p.wiek ?? ''}`.trim();
   if (cityEl) cityEl.textContent = (p.miasto || '—').toUpperCase();
   if (bioEl) bioEl.textContent = p.bio || 'Brak opisu.';
+  const socialEl = document.getElementById('profile-gallery-social');
+  if (socialEl) {
+    if (typeof window.buildProfileSocialHtml === 'function' && window.hasProfileSocial(p.id)) {
+      socialEl.innerHTML = window.buildProfileSocialHtml(p.id);
+      socialEl.hidden = false;
+    } else {
+      socialEl.innerHTML = '';
+      socialEl.hidden = true;
+    }
+  }
   if (avatarEl) {
     avatarEl.src = getAvatarForProfile(p.id);
     avatarEl.alt = p.imie || 'Zdjęcie profilowe';

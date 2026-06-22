@@ -26,7 +26,7 @@ const ROSE_GIFT_SRC = 'images/gifts/rose.gif';
 
 /** Linki afiliacyjne — kontynuacja rozmowy po zakończeniu czasu (modal) */
 const KOLEZANKA_AFFILIATE_LINKS = {
-  1: 'https://safeoffers.pro/a/L9rgnHYGPWTjJzP', // Natalcia
+  1: 'https://safeoffers.pro/a/L9rgnHYGPWTjJzP', // Paulincie
   2: 'https://safeoffers.pro/a/J6pZluQvGzfv7ZO', // Wikaa_
   3: 'https://safeoffers.pro/a/wpLjZsRQoQt1z2x', // Monikapv
   4: 'https://safeoffers.pro/a/NkwxpCjZBKSrW5r', // Weronikaaa
